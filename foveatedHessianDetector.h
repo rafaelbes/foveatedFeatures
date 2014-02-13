@@ -3,6 +3,8 @@
 
 #include "opencv2/opencv.hpp"
 #include "opencv2/core/core.hpp"
+#include "linearFoveation.h"
+
 using namespace cv;
 
 static const int   SURF_ORI_SEARCH_INC = 5;
@@ -404,6 +406,37 @@ static void fastHessianDetector( const Mat& sum, const Mat& mask_sum, vector<Key
     std::sort(keypoints.begin(), keypoints.end(), KeypointGreater());
 }
 
+
+//13/02/14 17:20:31 
+//estrutura com os parâmetros para o detector hessiano foveado
+struct foveatedHessianDetectorParams {
+
+	foveatedHessianDetectorParams() {
+		nOctaveLayers = 3;
+		nOctaves = 4;
+		hessianThreshold = 100;
+	}
+
+	int nOctaves;
+	int nOctaveLayers;
+	float hessianThreshold;
+};
+
+//13/02/14 17:18:19 
+//função para aplicar detector hessiano foveado
+static void foveatedHessianDetector(InputArray _img, vector<KeyPoint>& keypoints, foveatedHessianDetectorParams params) {
+	Mat sum;
+	Mat img = _img.getMat();
+    integral(img, sum, CV_32S);
+    
+	CV_Assert(!img.empty() && img.depth() == CV_8U);
+    if( img.channels() > 1 )
+        cvtColor(img, img, COLOR_BGR2GRAY);
+    CV_Assert(params.hessianThreshold >= 0);
+    CV_Assert(params.nOctaves > 0);
+    CV_Assert(params.nOctaveLayers > 0);
+
+}
 
 #endif
 

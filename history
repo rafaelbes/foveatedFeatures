@@ -4,3 +4,4 @@
 13/02/14 16:16:24 um arquivo chamado test.cpp também foi criado para fazer testes básicos com o foveated hessian detc
 13/02/14 16:24:37 fiz um grep -R SURF *.cpp em opencv-2.4.8/samples/cpp e encontrei o generic_descriptor_match.cpp
 13/02/14 16:25:16 vou utilizar esse arquivo para servir de base para o test.cpp
+13/02/14 17:01:35 o test.cpp deve ser modificado para utilizar seus próprios keypoints (usando foveatedHessianDetector)
