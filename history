@@ -1,0 +1,6 @@
+13/02/14 16:14:36 criei esse histórico
+13/02/14 16:14:43 o arquivo surf_opencv2.4.8.cpp contém o surf original do opencv
+13/02/14 16:15:35 o próximo passo foi criar o arquivo foveatedHessianDetector.h, com uma parte do surf_opencv2.4.8.cpp
+13/02/14 16:16:24 um arquivo chamado test.cpp também foi criado para fazer testes básicos com o foveated hessian detc
+13/02/14 16:24:37 fiz um grep -R SURF *.cpp em opencv-2.4.8/samples/cpp e encontrei o generic_descriptor_match.cpp
+13/02/14 16:25:16 vou utilizar esse arquivo para servir de base para o test.cpp
