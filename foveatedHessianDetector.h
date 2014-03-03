@@ -20,6 +20,21 @@ static const int SURF_HAAR_SIZE0 = 9;
 // above and below are aligned correctly.
 static const int SURF_HAAR_SIZE_INC = 6;
 
+//13/02/14 17:20:31 
+//estrutura com os parâmetros para o detector hessiano foveado
+struct FoveatedHessianDetectorParams {
+
+	FoveatedHessianDetectorParams() {
+		nOctaveLayers = 3;
+		nOctaves = 4;
+		hessianThreshold = 100;
+	}
+
+	int nOctaves;
+	int nOctaveLayers;
+	float hessianThreshold;
+};
+
 
 struct SurfHF
 {
@@ -354,13 +369,16 @@ struct KeypointGreater
 };
 
 
-static void fastHessianDetector( const Mat& sum, const Mat& mask_sum, vector<KeyPoint>& keypoints,
-                                 int nOctaves, int nOctaveLayers, float hessianThreshold )
+static void fastFoveatedHessianDetector( const Mat& sum, const Mat& mask_sum, vector<KeyPoint>& keypoints, FoveatedHessianDetectorParams params)
 {
     /* Sampling step along image x and y axes at first octave. This is doubled
        for each additional octave. WARNING: Increasing this improves speed,
        however keypoint extraction becomes unreliable. */
     const int SAMPLE_STEP0 = 1;
+
+	int nOctaveLayers = params.nOctaveLayers;
+	int nOctaves = params.nOctaves;
+	float hessianThreshold = params.hessianThreshold;
 
     int nTotalLayers = (nOctaveLayers+2)*nOctaves;
     int nMiddleLayers = nOctaveLayers*nOctaves;
@@ -407,28 +425,19 @@ static void fastHessianDetector( const Mat& sum, const Mat& mask_sum, vector<Key
 }
 
 
-//13/02/14 17:20:31 
-//estrutura com os parâmetros para o detector hessiano foveado
-struct foveatedHessianDetectorParams {
-
-	foveatedHessianDetectorParams() {
-		nOctaveLayers = 3;
-		nOctaves = 4;
-		hessianThreshold = 100;
-	}
-
-	int nOctaves;
-	int nOctaveLayers;
-	float hessianThreshold;
-};
-
 //13/02/14 17:18:19 
 //função para aplicar detector hessiano foveado
-static void foveatedHessianDetector(InputArray _img, vector<KeyPoint>& keypoints, foveatedHessianDetectorParams params) {
-	Mat sum;
+static void foveatedHessianDetector(InputArray _img, InputArray _mask, vector<KeyPoint>& keypoints, FoveatedHessianDetectorParams params) {
+	Mat sum, mask1, msum;
 	Mat img = _img.getMat();
+	Mat mask = _mask.getMat();
+
     integral(img, sum, CV_32S);
-    
+	if(!mask.empty()) {
+		cv::min(mask, 1, mask1);
+		integral(mask1, msum, CV_32S);
+	}
+
 	CV_Assert(!img.empty() && img.depth() == CV_8U);
     if( img.channels() > 1 )
         cvtColor(img, img, COLOR_BGR2GRAY);
@@ -436,6 +445,7 @@ static void foveatedHessianDetector(InputArray _img, vector<KeyPoint>& keypoints
     CV_Assert(params.nOctaves > 0);
     CV_Assert(params.nOctaveLayers > 0);
 
+	fastFoveatedHessianDetector(sum, msum, keypoints, params);
 }
 
 #endif

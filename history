@@ -5,3 +5,10 @@
 13/02/14 16:24:37 fiz um grep -R SURF *.cpp em opencv-2.4.8/samples/cpp e encontrei o generic_descriptor_match.cpp
 13/02/14 16:25:16 vou utilizar esse arquivo para servir de base para o test.cpp
 13/02/14 17:01:35 o test.cpp deve ser modificado para utilizar seus próprios keypoints (usando foveatedHessianDetector)
+02/03/14 23:10:35 o test.cpp foi modificado e totalmente substituido por opencv-2.4.8/samples/cpp/matcher_simple.cpp
+03/03/14 00:12:02 foveatedHessianDetector.h: FoveatedHessianDetectorParams movido para o início do arquivo
+03/03/14 00:12:44 foveatedHessianDetector.h: renomeado fastHessianDetector para fastFoveatedHessianDetector
+03/03/14 00:13:15 foveatedHessianDetector.h: retirado os parâmetros de fastFoveatedHessianDetector: masksum, nOctaves, nOctaveLayers, hessianThreshold
+03/03/14 00:13:57 foveatedHessianDetector.h: acrescentado o parâmetro em fastFoveatedHessianDetector: FoveatedHessianDetectorParams (que contém nOctaves, etc)
+03/03/14 00:17:24 foveatedHessianDetector.h: fastFoveatedHessianDetector: acrescentado variáveis locais para resgatar valores de FoveatedHessianDetectorParams params
+03/03/14 13:00:26 foveatedHessianDetector.h: voltando com o masksum - feito
