@@ -12,3 +12,6 @@
 03/03/14 00:13:57 foveatedHessianDetector.h: acrescentado o parâmetro em fastFoveatedHessianDetector: FoveatedHessianDetectorParams (que contém nOctaves, etc)
 03/03/14 00:17:24 foveatedHessianDetector.h: fastFoveatedHessianDetector: acrescentado variáveis locais para resgatar valores de FoveatedHessianDetectorParams params
 03/03/14 13:00:26 foveatedHessianDetector.h: voltando com o masksum - feito
+04/03/14 04:23:39 foveatedHessianDetector.h: acrescentado parâmetros de foveamento em FoveatedHessianDetectorParams
+04/03/14 05:55:52 foveatedHessianDetector.h: acrescentado construtor FoveatedHessianDetectorParams para receber de arquivo yml + tamanho da imagem
+04/03/14 05:56:26 foveatedHessianDetector.h: criado o arquivo fovea1.yml como exemplo

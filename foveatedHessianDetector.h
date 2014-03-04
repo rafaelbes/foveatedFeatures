@@ -29,10 +29,31 @@ struct FoveatedHessianDetectorParams {
 		nOctaves = 4;
 		hessianThreshold = 100;
 	}
+	FoveatedHessianDetectorParams(int wx, int wy, int ux, int uy, int m, std::vector<int> beta, std::vector<int> eta) {
+		//TODO: implementar
+	}
+
+	FoveatedHessianDetectorParams(int imageWidth, int imageHeight, char *ymlFile) {
+		FileStorage fs(ymlFile, FileStorage::READ);
+		wx = (int) fs["smallestLevelWidth"];
+		wy = (int) fs["smallestLevelHeight"];
+		fs["etavector"] >> eta;
+		fs["bvector"] >> beta;
+		m = (int) fs["numberOfLevels"];
+		fs.release();
+	}
 
 	int nOctaves;
 	int nOctaveLayers;
 	float hessianThreshold;
+	
+	//foveation parameters
+	int wx, wy;
+	int ux, uy;
+	int fx, fy;
+	int m;
+	std::vector<int> beta;
+	std::vector<int> eta;
 };
 
 

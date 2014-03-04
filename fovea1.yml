@@ -1,0 +1,6 @@
+%YAML:1.0
+smallestLevelWidth: 32
+smallestLevelHeight: 24
+numberOfLevels: 4
+bvector: [1, 1, 1, 1]
+etavector: [4, 3, 2, 1]
