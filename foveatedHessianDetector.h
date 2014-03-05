@@ -24,21 +24,27 @@ static const int SURF_HAAR_SIZE_INC = 6;
 //estrutura com os parâmetros para o detector hessiano foveado
 struct FoveatedHessianDetectorParams {
 
-	FoveatedHessianDetectorParams() {
+	void init() {
 		nOctaveLayers = 3;
 		nOctaves = 4;
 		hessianThreshold = 100;
+	}
+
+	FoveatedHessianDetectorParams() {
+		init();
 	}
 	FoveatedHessianDetectorParams(int wx, int wy, int ux, int uy, int m, std::vector<int> beta, std::vector<int> eta) {
 		//TODO: implementar
 	}
 
-	FoveatedHessianDetectorParams(int imageWidth, int imageHeight, char *ymlFile) {
+	FoveatedHessianDetectorParams(int imageWidth, int imageHeight, String ymlFile) {
+		init();
 		FileStorage fs(ymlFile, FileStorage::READ);
 		wx = (int) fs["smallestLevelWidth"];
 		wy = (int) fs["smallestLevelHeight"];
 		fs["etavector"] >> eta;
 		fs["bvector"] >> beta;
+		fs["levelvector"] >> level;
 		m = (int) fs["numberOfLevels"];
 		fs.release();
 	}
@@ -54,6 +60,7 @@ struct FoveatedHessianDetectorParams {
 	int m;
 	std::vector<int> beta;
 	std::vector<int> eta;
+	std::vector<int> level;
 };
 
 
@@ -96,7 +103,7 @@ resizeHaarPattern( const int src[][5], SurfHF* dst, int n, int oldSize, int newS
  * scale-space pyramid
  */
 static void calcLayerDetAndTrace( const Mat& sum, int size, int sampleStep,
-                                  Mat& det, Mat& trace )
+                                  Mat& det, Mat& trace, FoveatedHessianDetectorParams params )
 {
     const int NX=3, NY=3, NXY=4;
     const int dx_s[NX][5] = { {0, 2, 3, 7, 1}, {3, 2, 6, 7, -2}, {6, 2, 9, 7, 1} };
@@ -193,26 +200,34 @@ struct SURFBuildInvoker : ParallelLoopBody
 {
     SURFBuildInvoker( const Mat& _sum, const vector<int>& _sizes,
                       const vector<int>& _sampleSteps,
-                      vector<Mat>& _dets, vector<Mat>& _traces )
+                      vector<Mat>& _dets, vector<Mat>& _traces, 
+					  FoveatedHessianDetectorParams _params,
+					  vector<int>& _margin, vector<int>& _foveaLevel)
     {
         sum = &_sum;
         sizes = &_sizes;
         sampleSteps = &_sampleSteps;
         dets = &_dets;
         traces = &_traces;
+		params = _params;
+		margin = &_margin;
+		foveaLevel = &_foveaLevel;
     }
 
     void operator()(const Range& range) const
     {
         for( int i=range.start; i<range.end; i++ )
-            calcLayerDetAndTrace( *sum, (*sizes)[i], (*sampleSteps)[i], (*dets)[i], (*traces)[i] );
+            calcLayerDetAndTrace( *sum, (*sizes)[i], (*sampleSteps)[i], (*dets)[i], (*traces)[i], params );
     }
 
     const Mat *sum;
     const vector<int> *sizes;
     const vector<int> *sampleSteps;
+	const vector<int> *foveaLevel;
+	const vector<int> *margin;
     vector<Mat>* dets;
     vector<Mat>* traces;
+	FoveatedHessianDetectorParams params;
 };
 
 // Multi-threaded search of the scale-space pyramid for keypoints
@@ -398,11 +413,11 @@ static void fastFoveatedHessianDetector( const Mat& sum, const Mat& mask_sum, ve
     const int SAMPLE_STEP0 = 1;
 
 	int nOctaveLayers = params.nOctaveLayers;
-	int nOctaves = params.nOctaves;
+//	int nOctaves = params.nOctaves;
 	float hessianThreshold = params.hessianThreshold;
 
-    int nTotalLayers = (nOctaveLayers+2)*nOctaves;
-    int nMiddleLayers = nOctaveLayers*nOctaves;
+    int nTotalLayers = (nOctaveLayers+2)*params.beta.size();
+    int nMiddleLayers = nOctaveLayers*params.beta.size();
 
     vector<Mat> dets(nTotalLayers);
     vector<Mat> traces(nTotalLayers);
@@ -410,31 +425,35 @@ static void fastFoveatedHessianDetector( const Mat& sum, const Mat& mask_sum, ve
     vector<int> sampleSteps(nTotalLayers);
     vector<int> middleIndices(nMiddleLayers);
 
+	vector<int> foveaLevel(nTotalLayers);
+	vector<int> margin(nTotalLayers);
+
     keypoints.clear();
 
     // Allocate space and calculate properties of each layer
     int index = 0, middleIndex = 0, step = SAMPLE_STEP0;
 
-    for( int octave = 0; octave < nOctaves; octave++ )
-    {
-        for( int layer = 0; layer < nOctaveLayers+2; layer++ )
-        {
+	for(unsigned int i = 0; i < params.beta.size(); i++) {
+        for( int layer = 0; layer < nOctaveLayers+2; layer++ ) {
             /* The integral image sum is one pixel bigger than the source image*/
+			margin[index] = ((SURF_HAAR_SIZE0+SURF_HAAR_SIZE_INC*(params.nOctaveLayers+1))<<(params.eta[i]-1))/2;
+			foveaLevel[index] = params.level[i];
             dets[index].create( (sum.rows-1)/step, (sum.cols-1)/step, CV_32F );
             traces[index].create( (sum.rows-1)/step, (sum.cols-1)/step, CV_32F );
-            sizes[index] = (SURF_HAAR_SIZE0 + SURF_HAAR_SIZE_INC*layer) << octave;
-            sampleSteps[index] = step;
+            sizes[index] = (SURF_HAAR_SIZE0 + SURF_HAAR_SIZE_INC*layer) << (params.eta[i] - 1);
+            sampleSteps[index] = 1 << (params.eta[i] - 1);
 
             if( 0 < layer && layer <= nOctaveLayers )
                 middleIndices[middleIndex++] = index;
+//			std::cout << index << " " << layer << ", sampleStep = " << sampleSteps[index] << "\t";
+//			std::cout << "Size: " << sizes[index] << ", eta = " << params.eta[i] << std::endl;
             index++;
         }
-        step *= 2;
     }
 
     // Calculate hessian determinant and trace samples in each layer
     parallel_for_( Range(0, nTotalLayers),
-                   SURFBuildInvoker(sum, sizes, sampleSteps, dets, traces) );
+                   SURFBuildInvoker(sum, sizes, sampleSteps, dets, traces, params, margin, foveaLevel) );
 
     // Find maxima in the determinant of the hessian
     parallel_for_( Range(0, nMiddleLayers),

@@ -5,13 +5,27 @@
 13/02/14 16:24:37 fiz um grep -R SURF *.cpp em opencv-2.4.8/samples/cpp e encontrei o generic_descriptor_match.cpp
 13/02/14 16:25:16 vou utilizar esse arquivo para servir de base para o test.cpp
 13/02/14 17:01:35 o test.cpp deve ser modificado para utilizar seus próprios keypoints (usando foveatedHessianDetector)
+======================================================================================
 02/03/14 23:10:35 o test.cpp foi modificado e totalmente substituido por opencv-2.4.8/samples/cpp/matcher_simple.cpp
+======================================================================================
 03/03/14 00:12:02 foveatedHessianDetector.h: FoveatedHessianDetectorParams movido para o início do arquivo
 03/03/14 00:12:44 foveatedHessianDetector.h: renomeado fastHessianDetector para fastFoveatedHessianDetector
 03/03/14 00:13:15 foveatedHessianDetector.h: retirado os parâmetros de fastFoveatedHessianDetector: masksum, nOctaves, nOctaveLayers, hessianThreshold
 03/03/14 00:13:57 foveatedHessianDetector.h: acrescentado o parâmetro em fastFoveatedHessianDetector: FoveatedHessianDetectorParams (que contém nOctaves, etc)
 03/03/14 00:17:24 foveatedHessianDetector.h: fastFoveatedHessianDetector: acrescentado variáveis locais para resgatar valores de FoveatedHessianDetectorParams params
 03/03/14 13:00:26 foveatedHessianDetector.h: voltando com o masksum - feito
+======================================================================================
 04/03/14 04:23:39 foveatedHessianDetector.h: acrescentado parâmetros de foveamento em FoveatedHessianDetectorParams
 04/03/14 05:55:52 foveatedHessianDetector.h: acrescentado construtor FoveatedHessianDetectorParams para receber de arquivo yml + tamanho da imagem
 04/03/14 05:56:26 foveatedHessianDetector.h: criado o arquivo fovea1.yml como exemplo
+04/03/14 11:22:00 foveatedHessianDetector.h: criada a função init em FoveatedHessianDetectorParams, já que não há delegação de construtores
+04/03/14 11:25:51 foveatedHessianDetector.h: passando FoveatedHessianDetectorParams para SURFBuildInvoker, que é um procedimento paralelizável que chama calcLayerDetAndTrace
+04/03/14 12:54:20 copiado o arquivo foveatedSurf.h que estava no projeto das caixas de remédio, que parece estar mais próximo da implementação da versão 2.4.8 do opencv
+04/03/14 12:57:30 foveatedHessianDetector.h: laço entre o número de oitavas substituído pelo número de níveis do modelo de foveamento
+04/03/14 13:07:51 foveatedHessianDetector.h: acrescentado o vetor level em FoveatedHessianDetectorParams
+04/03/14 19:46:07 foveatedHessianDetector.h: fastFoveatedHessianDetector: valores de nTotalLayers e nMiddleLayers atualizados
+04/03/14 19:46:49 foveatedHessianDetector.h: fastFoveatedHessianDetector: acrescentado o vetor margin e seus valores inicializados. Lembrando que margin é o tamanho do maior filtro hessiano para aquele nível de foveamento (a variável m no algoritmo 5 (página 52) da tese de Rafael)
+04/03/14 19:55:45 foveatedHessianDetector.h: fastFoveatedHessianDetector: acrescentado o vetor foveaLevel e seus valores inicializados
+04/03/14 20:04:38 vale uma observação importante: a oitava na frequência original é 0 ou 1? Vou assumir como está na tese, isso é, oitavas começam em 1
+04/03/14 20:47:51 valores de margin e sizes impressos na saída padrão, conferi e os resultados estão condizentes
+04/03/14 21:17:19 acrescentado em SURFBuildInvoker os parâmetros também de margin e foveaLevel, assim como os atributos locais dessa classe. A chamada de SURFBuildInvoker também foi alterada para incluir os respectivos argumentos.
