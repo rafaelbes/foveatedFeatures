@@ -8,5 +8,20 @@ Rafael Beserra Gomes, Bruno Motta de Carvalho, Luiz Marcos Garcia Gonçalves, Vi
 
 Usage
 ----------------
+First, you must create a yml file that contains initial values of the foveated model. You MUST specify the following parameters:
+- smallestLevelWidth: 0 < value < imageWidth
+- smallestLevelHeight: 0 < value < imageHeight
+- numberOfLevels: 
+- bvector
+- etavector
+- levelvector: a 
 
+Second, use the struct FoveatedHessianDetectorParams to specify:
+- the image size (no default value)
+- the YML file path containing the foveated model parameters (no default file)
+- hessian threshold (default value: 100);
+- the number of layers in each octave (it is preferable to use default value: 3).
+Use FoveatedHessianDetectorParams(int imageWidth, int imageHeight, String ymlFile) construtor to specify the original image size and the yml file file path.
 
+After that, use foveatedHessianDetector function:
+static void foveatedHessianDetector(InputArray _img, InputArray _mask, vector<KeyPoint>& keypoints, FoveatedHessianDetectorParams params);

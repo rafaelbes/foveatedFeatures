@@ -2,9 +2,10 @@
 smallestLevelWidth: 32
 smallestLevelHeight: 24
 numberOfLevels: 4
-bvector: [1, 1, 1, 1]
-etavector: [4, 3, 2, 1]
-levelvector: [0, 1, 2, 3]
-foveax: 500
+bvector: [1, 0, 0, 0, 0]
+etavector: [1, 3, 2, 1, 1]
+levelvector: [2, 1, 2, 0, 3]
+foveax: 120
 foveay: 30
 hessianThreshold: 100
+growthfactor: 10

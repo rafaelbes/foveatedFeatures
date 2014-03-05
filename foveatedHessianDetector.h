@@ -26,49 +26,42 @@ struct FoveatedHessianDetectorParams {
 
 	void init() {
 		nOctaveLayers = 3;
-		nOctaves = 4;
 		hessianThreshold = 100;
-		fx = fy = 0;
-		growthfactor = 0;
 	}
 
 	FoveatedHessianDetectorParams() {
 		init();
 	}
-	FoveatedHessianDetectorParams(int wx, int wy, int ux, int uy, int m, std::vector<int> beta, std::vector<int> eta) {
-		//TODO: implementar
-	}
 
 	FoveatedHessianDetectorParams(int imageWidth, int imageHeight, String ymlFile) {
 		init();
 		FileStorage fs(ymlFile, FileStorage::READ);
-		wx = (int) fs["smallestLevelWidth"];
-		wy = (int) fs["smallestLevelHeight"];
-		fs["etavector"] >> eta;
-		fs["bvector"] >> beta;
-		fs["levelvector"] >> level;
-		m = (int) fs["numberOfLevels"];
-		fs["foveax"] >> fx;
-		fs["foveay"] >> fy;
+		foveaModel.wx = (int) fs["smallestLevelWidth"];
+		foveaModel.wy = (int) fs["smallestLevelHeight"];
+		
+		fs["etavector"] >> foveaModel.eta;
+		fs["bvector"] >> foveaModel.beta;
+		fs["levelvector"] >> foveaModel.level;
+		int numberOfLevels = (int) fs["numberOfLevels"];
+		foveaModel.m = numberOfLevels - 1;
+		fs["foveax"] >> foveaModel.fx;
+		fs["foveay"] >> foveaModel.fy;
 		fs["hessianThreshold"] >> hessianThreshold;
+		fs["growthfactor"] >> foveaModel.growthfactor;
 		fs.release();
-		ux = imageWidth;
-		uy = imageHeight;
+		foveaModel.ux = imageWidth;
+		foveaModel.uy = imageHeight;
+
+		foveaModel.check();
+		assert(hessianThreshold > 0);
+		foveaModel.fixFovea();
 	}
 
-	int nOctaves;
 	int nOctaveLayers;
 	float hessianThreshold;
 
 	//foveation parameters
-	int wx, wy;
-	int ux, uy;
-	int fx, fy;
-	int m;
-	int growthfactor;
-	std::vector<int> beta;
-	std::vector<int> eta;
-	std::vector<int> level;
+	LinearFoveation foveaModel;
 };
 
 
@@ -120,27 +113,20 @@ static void calcLayerDetAndTrace( const Mat& sum, int size, int sampleStep,
 
 	//foveated parameters
 	int k = foveaLevel;
-	int fx = params.fx;
-	int fy = params.fy;
-	int wx = params.wx;
-	int wy = params.wy;
-	int ux = params.ux;
-	int uy = params.uy;
-	int m = params.m;
 
-	int deltax = (k*(ux - wx + 2*fx))/(2*m);
-	int deltay = (k*(uy - wy + 2*fy))/(2*m);
-	int skx = (k*wx - k*ux + m*ux)/m;
-	int sky = (k*wy - k*uy + m*uy)/m;
+	int deltax = params.foveaModel.getDeltax(k);
+	int deltay = params.foveaModel.getDeltay(k);
+	int skx = params.foveaModel.getSizex(k);
+	int sky = params.foveaModel.getSizey(k);
 
 	//margin ref: centro da wavelet
 	//margin_x ref: centro da wavelet
-	int margin_x = MAX(marginH, deltax - params.growthfactor);
-	int margin_y = MAX(marginH, deltay - params.growthfactor);
+	int margin_x = MAX(marginH, deltax - params.foveaModel.growthfactor);
+	int margin_y = MAX(marginH, deltay - params.foveaModel.growthfactor);
 
 	//limit_x ref: centro da wavelet
-	int limit_x = MIN(deltax + skx + params.growthfactor, ux - marginH);
-	int limit_y = MIN(deltay + sky + params.growthfactor, uy - marginH);
+	int limit_x = MIN(deltax + skx + params.foveaModel.growthfactor, params.foveaModel.ux - marginH);
+	int limit_y = MIN(deltay + sky + params.foveaModel.growthfactor, params.foveaModel.uy - marginH);
 
 	//sum_i ref: comeco da wavelet
 	int sum_i, sum_j;
@@ -256,7 +242,7 @@ struct SURFBuildInvoker : ParallelLoopBody
 	void operator()(const Range& range) const
 	{
 		for( int i=range.start; i<range.end; i++ ) {
-			if(params.beta[(*foveaLevel)[i]] == 0) continue;
+			if((*foveaLevel)[i] == -1) continue;
 			calcLayerDetAndTrace( *sum, (*sizes)[i], (*sampleSteps)[i], (*dets)[i], (*traces)[i], params, (*margin)[i], (*foveaLevel)[i] );
 		}
 	}
@@ -308,8 +294,8 @@ struct SURFFindInvoker : ParallelLoopBody
 		for( int i=range.start; i<range.end; i++ )
 		{
 			int layer = (*middleIndices)[i];
-			int octave = params.eta[layer];
-			if(params.beta[(*foveaLevel)[layer]] == 0) continue;
+			int octave = params.foveaModel.eta[layer];
+			if((*foveaLevel)[layer] == -1) continue;
 			findMaximaInLayer( *sum, *mask_sum, *dets, *traces, *sizes,
 					*keypoints, octave, layer, hessianThreshold,
 					(*sampleSteps)[layer],
@@ -356,27 +342,20 @@ void SURFFindInvoker::findMaximaInLayer( const Mat& sum, const Mat& mask_sum,
 
 	//foveated parameters
 	int k = foveaLevel;
-	int fx = params.fx;
-	int fy = params.fy;
-	int wx = params.wx;
-	int wy = params.wy;
-	int ux = params.ux;
-	int uy = params.uy;
-	int m = params.m;
 
-	int deltax = (k*(ux - wx + 2*fx))/(2*m);
-	int deltay = (k*(uy - wy + 2*fy))/(2*m);
-	int skx = (k*wx - k*ux + m*ux)/m;
-	int sky = (k*wy - k*uy + m*uy)/m;
+	int deltax = params.foveaModel.getDeltax(k);
+	int deltay = params.foveaModel.getDeltay(k);
+	int skx = params.foveaModel.getSizex(k);
+	int sky = params.foveaModel.getSizey(k);
 
 	//margin ref: centro da wavelet
 	//margin_x ref: centro da wavelet
-	int margin_x = MAX(marginH, deltax - params.growthfactor);
-	int margin_y = MAX(marginH, deltay - params.growthfactor);
+	int margin_x = MAX(marginH, deltax - params.foveaModel.growthfactor);
+	int margin_y = MAX(marginH, deltay - params.foveaModel.growthfactor);
 
 	//limit_x ref: centro da wavelet
-	int limit_x = MIN(deltax + skx + params.growthfactor, ux - marginH);
-	int limit_y = MIN(deltay + sky + params.growthfactor, uy - marginH);
+	int limit_x = MIN(deltax + skx + params.foveaModel.growthfactor, params.foveaModel.ux - marginH);
+	int limit_y = MIN(deltay + sky + params.foveaModel.growthfactor, params.foveaModel.uy - marginH);
 
 	//sum_i ref: comeco da wavelet
 	int sum_i, sum_j;
@@ -485,11 +464,10 @@ static void fastFoveatedHessianDetector( const Mat& sum, const Mat& mask_sum, ve
 	const int SAMPLE_STEP0 = 1;
 
 	int nOctaveLayers = params.nOctaveLayers;
-	//	int nOctaves = params.nOctaves;
 	float hessianThreshold = params.hessianThreshold;
 
-	int nTotalLayers = (nOctaveLayers+2)*params.beta.size();
-	int nMiddleLayers = nOctaveLayers*params.beta.size();
+	int nTotalLayers = (nOctaveLayers+2)*params.foveaModel.beta.size();
+	int nMiddleLayers = nOctaveLayers*params.foveaModel.beta.size();
 
 	vector<Mat> dets(nTotalLayers);
 	vector<Mat> traces(nTotalLayers);
@@ -505,15 +483,18 @@ static void fastFoveatedHessianDetector( const Mat& sum, const Mat& mask_sum, ve
 	// Allocate space and calculate properties of each layer
 	int index = 0, middleIndex = 0, step = SAMPLE_STEP0;
 
-	for(unsigned int i = 0; i < params.beta.size(); i++) {
+	for(unsigned int i = 0; i < params.foveaModel.beta.size(); i++) {
 		for( int layer = 0; layer < nOctaveLayers+2; layer++ ) {
 			/* The integral image sum is one pixel bigger than the source image*/
-			margin[index] = ((SURF_HAAR_SIZE0+SURF_HAAR_SIZE_INC*(params.nOctaveLayers+1))<<(params.eta[i]-1))/2;
-			foveaLevel[index] = params.level[i];
-			dets[index].create( params.uy, params.ux, CV_32F );
-			traces[index].create( params.uy, params.ux, CV_32F );
-			sizes[index] = (SURF_HAAR_SIZE0 + SURF_HAAR_SIZE_INC*layer) << (params.eta[i] - 1);
-			sampleSteps[index] = 1 << (params.eta[i] - 1);
+			margin[index] = ((SURF_HAAR_SIZE0+SURF_HAAR_SIZE_INC*(params.nOctaveLayers+1))<<(params.foveaModel.eta[i]-1))/2;
+			if(params.foveaModel.beta[i] == 0)
+				foveaLevel[index] = -1;
+			else
+				foveaLevel[index] = params.foveaModel.level[i];
+			dets[index].create( params.foveaModel.uy, params.foveaModel.ux, CV_32F );
+			traces[index].create( params.foveaModel.uy, params.foveaModel.ux, CV_32F );
+			sizes[index] = (SURF_HAAR_SIZE0 + SURF_HAAR_SIZE_INC*layer) << (params.foveaModel.eta[i] - 1);
+			sampleSteps[index] = 1 << (params.foveaModel.eta[i] - 1);
 
 			if( 0 < layer && layer <= nOctaveLayers )
 				middleIndices[middleIndex++] = index;
@@ -544,6 +525,7 @@ static void foveatedHessianDetector(InputArray _img, InputArray _mask, vector<Ke
 	Mat img = _img.getMat();
 	Mat mask = _mask.getMat();
 
+	params.foveaModel.check();
 	integral(img, sum, CV_32S);
 	if(!mask.empty()) {
 		cv::min(mask, 1, mask1);
@@ -554,7 +536,6 @@ static void foveatedHessianDetector(InputArray _img, InputArray _mask, vector<Ke
 	if( img.channels() > 1 )
 		cvtColor(img, img, COLOR_BGR2GRAY);
 	CV_Assert(params.hessianThreshold >= 0);
-	CV_Assert(params.nOctaves > 0);
 	CV_Assert(params.nOctaveLayers > 0);
 
 	fastFoveatedHessianDetector(sum, msum, keypoints, params);
