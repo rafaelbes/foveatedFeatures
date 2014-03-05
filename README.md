@@ -13,7 +13,7 @@ The feature extraction process is done by a sequence of n passes. This differs s
 - numberOfLevels = 4, etavector = [4, 3, 2, 1], levels = [0, 1, 2, 3], b = [1, 1, 1, 1]
 - numberOfLevels = 5, etavector = [5, 4, 3, 2, 1], levels = [0, 1, 2, 3, 4], b = [1, 1, 1, 1]
 
-In the original paper, there is a B vector and a eta vector, each one with numberOfLevels elements. For example, 4 levels, B = {1, 1, 0, 1} and eta = {4, 3, 2, 1}, this set means that there is 4 passes for feature extraction:
+In the original paper, there are a B vector and a eta vector, each one with numberOfLevels elements. For example, 4 levels, B = {1, 1, 0, 1} and eta = {4, 3, 2, 1}, this set means that there are 4 passes for feature extraction:
 - first level (largest one) computes features in the fourth octave
 - second level computes features in the third octave
 - third level would compute features in the second octave, but is does not because B[3] = 0
@@ -26,7 +26,7 @@ In this implementation, bvector (B), etavector (eta) and levelvector have n elem
 - etavector: [e1, e2, ..., en]: a vector where ei is the octave (> 0) for which the feature extraction pass number i should be performed
 - levelvector: [l1, l2, ..., ln]: a vector where li is the foveated model level (>= 0 and < numberOfLevels) for which the feature extraction pass number i should be performed
 
-For example: 4 levels, B = {1, 0, 1, 1, 1}, eta = {3, 4, 2, 3, 1} and levels = {0, 0, 1, 1, 3}, this set means that there is 5 passes for feature extraction:
+For example: 4 levels, B = {1, 0, 1, 1, 1}, eta = {3, 4, 2, 3, 1} and levels = {0, 0, 1, 1, 3}, this set means that there are 5 passes for feature extraction:
 - first pass (B[1] = 1, eta[1] = 3 and levels[1] = 0): a feature extraction in the third octave is performed in the first level (largest one)
 - second pass (B[2] = 0, eta[2] = 4 and levels[2] = 0): a feature extraction in the fourth octave would be performed in the first level (largest one), but it does not because B[2] = 0
 - third pass (B[3] = 1, eta[3] = 2 and levels[3] = 1): a feature extraction in the second octave is performed in the second level
