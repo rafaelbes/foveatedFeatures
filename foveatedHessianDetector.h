@@ -28,6 +28,8 @@ struct FoveatedHessianDetectorParams {
 		nOctaveLayers = 3;
 		nOctaves = 4;
 		hessianThreshold = 100;
+		fx = fy = 0;
+		growthfactor = 0;
 	}
 
 	FoveatedHessianDetectorParams() {
@@ -46,6 +48,9 @@ struct FoveatedHessianDetectorParams {
 		fs["bvector"] >> beta;
 		fs["levelvector"] >> level;
 		m = (int) fs["numberOfLevels"];
+		fs["foveax"] >> fx;
+		fs["foveay"] >> fy;
+		fs["hessianThreshold"] >> hessianThreshold;
 		fs.release();
 		ux = imageWidth;
 		uy = imageHeight;
@@ -54,7 +59,7 @@ struct FoveatedHessianDetectorParams {
 	int nOctaves;
 	int nOctaveLayers;
 	float hessianThreshold;
-	
+
 	//foveation parameters
 	int wx, wy;
 	int ux, uy;
@@ -69,36 +74,36 @@ struct FoveatedHessianDetectorParams {
 
 struct SurfHF
 {
-    int p0, p1, p2, p3;
-    float w;
+	int p0, p1, p2, p3;
+	float w;
 
-    SurfHF(): p0(0), p1(0), p2(0), p3(0), w(0) {}
+	SurfHF(): p0(0), p1(0), p2(0), p3(0), w(0) {}
 };
 
 inline float calcHaarPattern( const int* origin, const SurfHF* f, int n )
 {
-    double d = 0;
-    for( int k = 0; k < n; k++ )
-        d += (origin[f[k].p0] + origin[f[k].p3] - origin[f[k].p1] - origin[f[k].p2])*f[k].w;
-    return (float)d;
+	double d = 0;
+	for( int k = 0; k < n; k++ )
+		d += (origin[f[k].p0] + origin[f[k].p3] - origin[f[k].p1] - origin[f[k].p2])*f[k].w;
+	return (float)d;
 }
 
-static void
+	static void
 resizeHaarPattern( const int src[][5], SurfHF* dst, int n, int oldSize, int newSize, int widthStep )
 {
-    float ratio = (float)newSize/oldSize;
-    for( int k = 0; k < n; k++ )
-    {
-        int dx1 = cvRound( ratio*src[k][0] );
-        int dy1 = cvRound( ratio*src[k][1] );
-        int dx2 = cvRound( ratio*src[k][2] );
-        int dy2 = cvRound( ratio*src[k][3] );
-        dst[k].p0 = dy1*widthStep + dx1;
-        dst[k].p1 = dy2*widthStep + dx1;
-        dst[k].p2 = dy1*widthStep + dx2;
-        dst[k].p3 = dy2*widthStep + dx2;
-        dst[k].w = src[k][4]/((float)(dx2-dx1)*(dy2-dy1));
-    }
+	float ratio = (float)newSize/oldSize;
+	for( int k = 0; k < n; k++ )
+	{
+		int dx1 = cvRound( ratio*src[k][0] );
+		int dy1 = cvRound( ratio*src[k][1] );
+		int dx2 = cvRound( ratio*src[k][2] );
+		int dy2 = cvRound( ratio*src[k][3] );
+		dst[k].p0 = dy1*widthStep + dx1;
+		dst[k].p1 = dy2*widthStep + dx1;
+		dst[k].p2 = dy1*widthStep + dx2;
+		dst[k].p3 = dy2*widthStep + dx2;
+		dst[k].w = src[k][4]/((float)(dx2-dx1)*(dy2-dy1));
+	}
 }
 
 /*
@@ -106,12 +111,12 @@ resizeHaarPattern( const int src[][5], SurfHF* dst, int n, int oldSize, int newS
  * scale-space pyramid
  */
 static void calcLayerDetAndTrace( const Mat& sum, int size, int sampleStep,
-                                  Mat& det, Mat& trace, FoveatedHessianDetectorParams params, int marginH, int foveaLevel )
+		Mat& det, Mat& trace, FoveatedHessianDetectorParams params, int marginH, int foveaLevel )
 {
-    const int NX=3, NY=3, NXY=4;
-    const int dx_s[NX][5] = { {0, 2, 3, 7, 1}, {3, 2, 6, 7, -2}, {6, 2, 9, 7, 1} };
-    const int dy_s[NY][5] = { {2, 0, 7, 3, 1}, {2, 3, 7, 6, -2}, {2, 6, 7, 9, 1} };
-    const int dxy_s[NXY][5] = { {1, 1, 4, 4, 1}, {5, 1, 8, 4, -1}, {1, 5, 4, 8, -1}, {5, 5, 8, 8, 1} };
+	const int NX=3, NY=3, NXY=4;
+	const int dx_s[NX][5] = { {0, 2, 3, 7, 1}, {3, 2, 6, 7, -2}, {6, 2, 9, 7, 1} };
+	const int dy_s[NY][5] = { {2, 0, 7, 3, 1}, {2, 3, 7, 6, -2}, {2, 6, 7, 9, 1} };
+	const int dxy_s[NXY][5] = { {1, 1, 4, 4, 1}, {5, 1, 8, 4, -1}, {1, 5, 4, 8, -1}, {5, 5, 8, 8, 1} };
 
 	//foveated parameters
 	int k = foveaLevel;
@@ -122,12 +127,12 @@ static void calcLayerDetAndTrace( const Mat& sum, int size, int sampleStep,
 	int ux = params.ux;
 	int uy = params.uy;
 	int m = params.m;
-	
+
 	int deltax = (k*(ux - wx + 2*fx))/(2*m);
 	int deltay = (k*(uy - wy + 2*fy))/(2*m);
 	int skx = (k*wx - k*ux + m*ux)/m;
 	int sky = (k*wy - k*uy + m*uy)/m;
-	
+
 	//margin ref: centro da wavelet
 	//margin_x ref: centro da wavelet
 	int margin_x = MAX(marginH, deltax - params.growthfactor);
@@ -141,30 +146,38 @@ static void calcLayerDetAndTrace( const Mat& sum, int size, int sampleStep,
 	int sum_i, sum_j;
 	sum_i = margin_y - size/2;
 
-    SurfHF Dx[NX], Dy[NY], Dxy[NXY];
+	//DEBUG
+	/*
+	std::cout << "Computando a imagem Hessiana" << std::endl;
+	std::cout << "Margin H = " << marginH << std::endl;
+	std::cout << "foveaLevel = " << foveaLevel << std::endl;
+	std::cout << "fovea = " << fx << " " << fy << std::endl;
+	std::cout << "delta = " << deltax << " " << deltay << std::endl;
+	std::cout << "A wavelet vai de " << margin_x << " até " << limit_x << std::endl;
+	std::cout << "Pulando de " << sampleStep << " em " << sampleStep << std::endl;
+	*/
 
-    if( size > sum.rows-1 || size > sum.cols-1 )
-       return;
+	SurfHF Dx[NX], Dy[NY], Dxy[NXY];
 
-    resizeHaarPattern( dx_s , Dx , NX , 9, size, sum.cols );
-    resizeHaarPattern( dy_s , Dy , NY , 9, size, sum.cols );
-    resizeHaarPattern( dxy_s, Dxy, NXY, 9, size, sum.cols );
+	if( size > sum.rows-1 || size > sum.cols-1 )
+		return;
 
-    /* Ignore pixels where some of the kernel is outside the image */
-    int margin = (size/2)/sampleStep;
+	resizeHaarPattern( dx_s , Dx , NX , 9, size, sum.cols );
+	resizeHaarPattern( dy_s , Dy , NY , 9, size, sum.cols );
+	resizeHaarPattern( dxy_s, Dxy, NXY, 9, size, sum.cols );
 
-    for(int  i = 0; sum_i + size/2 <= limit_y; i++, sum_i += sampleStep ) {
+	for(int  i = 0; sum_i + size/2 <= limit_y; i++, sum_i += sampleStep ) {
 		sum_j = margin_x - size/2;
-        const int* sum_ptr = sum.ptr<int>(sum_i);
-        float* det_ptr = &det.at<float>(i, 0);
-        float* trace_ptr = &trace.at<float>(i, 0);
-        for(int j = 0; sum_j + size/2 <= limit_x; sum_j += sampleStep, j++ ) {
-            float dx  = calcHaarPattern( sum_ptr, Dx , 3 );
-            float dy  = calcHaarPattern( sum_ptr, Dy , 3 );
-            float dxy = calcHaarPattern( sum_ptr, Dxy, 4 );
-            sum_ptr += sampleStep;
-            det_ptr[j] = dx*dy - 0.81f*dxy*dxy;
-            trace_ptr[j] = dx + dy;
+		const int* sum_ptr = sum.ptr<int>(sum_i);
+		float* det_ptr = &det.at<float>(i, 0);
+		float* trace_ptr = &trace.at<float>(i, 0);
+		for(int j = 0; sum_j + size/2 <= limit_x; sum_j += sampleStep, j++ ) {
+			float dx  = calcHaarPattern( sum_ptr, Dx , 3 );
+			float dy  = calcHaarPattern( sum_ptr, Dy , 3 );
+			float dxy = calcHaarPattern( sum_ptr, Dxy, 4 );
+			sum_ptr += sampleStep;
+			det_ptr[j] = dx*dy - 0.81f*dxy*dxy;
+			trace_ptr[j] = dx + dy;
 		}
 	}
 }
@@ -189,131 +202,136 @@ static void calcLayerDetAndTrace( const Mat& sum, int size, int sampleStep,
  *
  * Return value is 1 if interpolation was successful, 0 on failure.
  */
-static int
+	static int
 interpolateKeypoint( float N9[3][9], int dx, int dy, int ds, KeyPoint& kpt )
 {
-    Vec3f b(-(N9[1][5]-N9[1][3])/2,  // Negative 1st deriv with respect to x
-            -(N9[1][7]-N9[1][1])/2,  // Negative 1st deriv with respect to y
-            -(N9[2][4]-N9[0][4])/2); // Negative 1st deriv with respect to s
+	Vec3f b(-(N9[1][5]-N9[1][3])/2,  // Negative 1st deriv with respect to x
+			-(N9[1][7]-N9[1][1])/2,  // Negative 1st deriv with respect to y
+			-(N9[2][4]-N9[0][4])/2); // Negative 1st deriv with respect to s
 
-    Matx33f A(
-        N9[1][3]-2*N9[1][4]+N9[1][5],            // 2nd deriv x, x
-        (N9[1][8]-N9[1][6]-N9[1][2]+N9[1][0])/4, // 2nd deriv x, y
-        (N9[2][5]-N9[2][3]-N9[0][5]+N9[0][3])/4, // 2nd deriv x, s
-        (N9[1][8]-N9[1][6]-N9[1][2]+N9[1][0])/4, // 2nd deriv x, y
-        N9[1][1]-2*N9[1][4]+N9[1][7],            // 2nd deriv y, y
-        (N9[2][7]-N9[2][1]-N9[0][7]+N9[0][1])/4, // 2nd deriv y, s
-        (N9[2][5]-N9[2][3]-N9[0][5]+N9[0][3])/4, // 2nd deriv x, s
-        (N9[2][7]-N9[2][1]-N9[0][7]+N9[0][1])/4, // 2nd deriv y, s
-        N9[0][4]-2*N9[1][4]+N9[2][4]);           // 2nd deriv s, s
+	Matx33f A(
+			N9[1][3]-2*N9[1][4]+N9[1][5],            // 2nd deriv x, x
+			(N9[1][8]-N9[1][6]-N9[1][2]+N9[1][0])/4, // 2nd deriv x, y
+			(N9[2][5]-N9[2][3]-N9[0][5]+N9[0][3])/4, // 2nd deriv x, s
+			(N9[1][8]-N9[1][6]-N9[1][2]+N9[1][0])/4, // 2nd deriv x, y
+			N9[1][1]-2*N9[1][4]+N9[1][7],            // 2nd deriv y, y
+			(N9[2][7]-N9[2][1]-N9[0][7]+N9[0][1])/4, // 2nd deriv y, s
+			(N9[2][5]-N9[2][3]-N9[0][5]+N9[0][3])/4, // 2nd deriv x, s
+			(N9[2][7]-N9[2][1]-N9[0][7]+N9[0][1])/4, // 2nd deriv y, s
+			N9[0][4]-2*N9[1][4]+N9[2][4]);           // 2nd deriv s, s
 
-    Vec3f x = A.solve(b, DECOMP_LU);
+	Vec3f x = A.solve(b, DECOMP_LU);
 
-    bool ok = (x[0] != 0 || x[1] != 0 || x[2] != 0) &&
-        std::abs(x[0]) <= 1 && std::abs(x[1]) <= 1 && std::abs(x[2]) <= 1;
+	bool ok = (x[0] != 0 || x[1] != 0 || x[2] != 0) &&
+		std::abs(x[0]) <= 1 && std::abs(x[1]) <= 1 && std::abs(x[2]) <= 1;
 
-    if( ok )
-    {
-        kpt.pt.x += x[0]*dx;
-        kpt.pt.y += x[1]*dy;
-        kpt.size = (float)cvRound( kpt.size + x[2]*ds );
-    }
-    return ok;
+	if( ok )
+	{
+		kpt.pt.x += x[0]*dx;
+		kpt.pt.y += x[1]*dy;
+		kpt.size = (float)cvRound( kpt.size + x[2]*ds );
+	}
+	return ok;
 }
 
 // Multi-threaded construction of the scale-space pyramid
 struct SURFBuildInvoker : ParallelLoopBody
 {
-    SURFBuildInvoker( const Mat& _sum, const vector<int>& _sizes,
-                      const vector<int>& _sampleSteps,
-                      vector<Mat>& _dets, vector<Mat>& _traces, 
-					  FoveatedHessianDetectorParams _params,
-					  vector<int>& _margin, vector<int>& _foveaLevel)
-    {
-        sum = &_sum;
-        sizes = &_sizes;
-        sampleSteps = &_sampleSteps;
-        dets = &_dets;
-        traces = &_traces;
+	SURFBuildInvoker( const Mat& _sum, const vector<int>& _sizes,
+			const vector<int>& _sampleSteps,
+			vector<Mat>& _dets, vector<Mat>& _traces, 
+			FoveatedHessianDetectorParams _params,
+			vector<int>& _margin, vector<int>& _foveaLevel)
+	{
+		sum = &_sum;
+		sizes = &_sizes;
+		sampleSteps = &_sampleSteps;
+		dets = &_dets;
+		traces = &_traces;
 		params = _params;
 		margin = &_margin;
 		foveaLevel = &_foveaLevel;
-    }
+	}
 
-    void operator()(const Range& range) const
-    {
-        for( int i=range.start; i<range.end; i++ )
-            calcLayerDetAndTrace( *sum, (*sizes)[i], (*sampleSteps)[i], (*dets)[i], (*traces)[i], params, (*margin)[i], (*foveaLevel)[i] );
-    }
+	void operator()(const Range& range) const
+	{
+		for( int i=range.start; i<range.end; i++ ) {
+			if(params.beta[(*foveaLevel)[i]] == 0) continue;
+			calcLayerDetAndTrace( *sum, (*sizes)[i], (*sampleSteps)[i], (*dets)[i], (*traces)[i], params, (*margin)[i], (*foveaLevel)[i] );
+		}
+	}
 
-    const Mat *sum;
-    const vector<int> *sizes;
-    const vector<int> *sampleSteps;
+	const Mat *sum;
+	const vector<int> *sizes;
+	const vector<int> *sampleSteps;
 	const vector<int> *foveaLevel;
 	const vector<int> *margin;
-    vector<Mat>* dets;
-    vector<Mat>* traces;
+	vector<Mat>* dets;
+	vector<Mat>* traces;
 	FoveatedHessianDetectorParams params;
 };
 
 // Multi-threaded search of the scale-space pyramid for keypoints
 struct SURFFindInvoker : ParallelLoopBody
 {
-    SURFFindInvoker( const Mat& _sum, const Mat& _mask_sum,
-                     const vector<Mat>& _dets, const vector<Mat>& _traces,
-                     const vector<int>& _sizes, const vector<int>& _sampleSteps,
-                     const vector<int>& _middleIndices, vector<KeyPoint>& _keypoints,
-                     int _nOctaveLayers, float _hessianThreshold,
-					  FoveatedHessianDetectorParams _params,
-					  vector<int>& _margin, vector<int>& _foveaLevel)
-    {
-        sum = &_sum;
-        mask_sum = &_mask_sum;
-        dets = &_dets;
-        traces = &_traces;
-        sizes = &_sizes;
-        sampleSteps = &_sampleSteps;
-        middleIndices = &_middleIndices;
-        keypoints = &_keypoints;
-        nOctaveLayers = _nOctaveLayers;
-        hessianThreshold = _hessianThreshold;
+	SURFFindInvoker( const Mat& _sum, const Mat& _mask_sum,
+			const vector<Mat>& _dets, const vector<Mat>& _traces,
+			const vector<int>& _sizes, const vector<int>& _sampleSteps,
+			const vector<int>& _middleIndices, vector<KeyPoint>& _keypoints,
+			int _nOctaveLayers, float _hessianThreshold,
+			FoveatedHessianDetectorParams _params,
+			vector<int>& _margin, vector<int>& _foveaLevel)
+	{
+		sum = &_sum;
+		mask_sum = &_mask_sum;
+		dets = &_dets;
+		traces = &_traces;
+		sizes = &_sizes;
+		sampleSteps = &_sampleSteps;
+		middleIndices = &_middleIndices;
+		keypoints = &_keypoints;
+		nOctaveLayers = _nOctaveLayers;
+		hessianThreshold = _hessianThreshold;
 		params = _params;
 		margin = &_margin;
 		foveaLevel = &_foveaLevel;
-    }
+	}
 
-    static void findMaximaInLayer( const Mat& sum, const Mat& mask_sum,
-                   const vector<Mat>& dets, const vector<Mat>& traces,
-                   const vector<int>& sizes, vector<KeyPoint>& keypoints,
-                   int octave, int layer, float hessianThreshold, int sampleStep );
+	static void findMaximaInLayer( const Mat& sum, const Mat& mask_sum,
+			const vector<Mat>& dets, const vector<Mat>& traces,
+			const vector<int>& sizes, vector<KeyPoint>& keypoints,
+			int octave, int layer, float hessianThreshold, int sampleStep,
+			FoveatedHessianDetectorParams params, int marginH, int foveaLevel );
 
-    void operator()(const Range& range) const
-    {
-        for( int i=range.start; i<range.end; i++ )
-        {
-            int layer = (*middleIndices)[i];
-            int octave = i / nOctaveLayers; //TODO: essa oitava precisa ser revista
-            findMaximaInLayer( *sum, *mask_sum, *dets, *traces, *sizes,
-                               *keypoints, octave, layer, hessianThreshold,
-                               (*sampleSteps)[layer] );
-        }
-    }
+	void operator()(const Range& range) const
+	{
+		for( int i=range.start; i<range.end; i++ )
+		{
+			int layer = (*middleIndices)[i];
+			int octave = params.eta[layer];
+			if(params.beta[(*foveaLevel)[layer]] == 0) continue;
+			findMaximaInLayer( *sum, *mask_sum, *dets, *traces, *sizes,
+					*keypoints, octave, layer, hessianThreshold,
+					(*sampleSteps)[layer],
+					params, (*margin)[layer], (*foveaLevel)[layer]);
+		}
+	}
 
-    const Mat *sum;
-    const Mat *mask_sum;
-    const vector<Mat>* dets;
-    const vector<Mat>* traces;
-    const vector<int>* sizes;
-    const vector<int>* sampleSteps;
-    const vector<int>* middleIndices;
-    vector<KeyPoint>* keypoints;
-    int nOctaveLayers;
-    float hessianThreshold;
+	const Mat *sum;
+	const Mat *mask_sum;
+	const vector<Mat>* dets;
+	const vector<Mat>* traces;
+	const vector<int>* sizes;
+	const vector<int>* sampleSteps;
+	const vector<int>* middleIndices;
+	vector<KeyPoint>* keypoints;
+	int nOctaveLayers;
+	float hessianThreshold;
 	const vector<int> *foveaLevel;
 	const vector<int> *margin;
 	FoveatedHessianDetectorParams params;
 
-    static Mutex findMaximaInLayer_m;
+	static Mutex findMaximaInLayer_m;
 };
 
 Mutex SURFFindInvoker::findMaximaInLayer_m;
@@ -324,178 +342,198 @@ Mutex SURFFindInvoker::findMaximaInLayer_m;
  * scale-space pyramid
  */
 void SURFFindInvoker::findMaximaInLayer( const Mat& sum, const Mat& mask_sum,
-                   const vector<Mat>& dets, const vector<Mat>& traces,
-                   const vector<int>& sizes, vector<KeyPoint>& keypoints,
-                   int octave, int layer, float hessianThreshold, int sampleStep )
+		const vector<Mat>& dets, const vector<Mat>& traces,
+		const vector<int>& sizes, vector<KeyPoint>& keypoints,
+		int octave, int layer, float hessianThreshold, int sampleStep,
+		FoveatedHessianDetectorParams params, int marginH, int foveaLevel )
 {
-    // Wavelet Data
-    const int NM=1;
-    const int dm[NM][5] = { {0, 0, 9, 9, 1} };
-    SurfHF Dm;
+	// Wavelet Data
+	const int NM=1;
+	const int dm[NM][5] = { {0, 0, 9, 9, 1} };
+	SurfHF Dm;
 
-    int size = sizes[layer];
+	int size = sizes[layer];
 
-    // The integral image 'sum' is one pixel bigger than the source image
-    int layer_rows = (sum.rows-1)/sampleStep;
-    int layer_cols = (sum.cols-1)/sampleStep;
+	//foveated parameters
+	int k = foveaLevel;
+	int fx = params.fx;
+	int fy = params.fy;
+	int wx = params.wx;
+	int wy = params.wy;
+	int ux = params.ux;
+	int uy = params.uy;
+	int m = params.m;
 
-    // Ignore pixels without a 3x3x3 neighbourhood in the layer above
-    int margin = (sizes[layer+1]/2)/sampleStep+1;
+	int deltax = (k*(ux - wx + 2*fx))/(2*m);
+	int deltay = (k*(uy - wy + 2*fy))/(2*m);
+	int skx = (k*wx - k*ux + m*ux)/m;
+	int sky = (k*wy - k*uy + m*uy)/m;
 
-    if( !mask_sum.empty() )
-       resizeHaarPattern( dm, &Dm, NM, 9, size, mask_sum.cols );
+	//margin ref: centro da wavelet
+	//margin_x ref: centro da wavelet
+	int margin_x = MAX(marginH, deltax - params.growthfactor);
+	int margin_y = MAX(marginH, deltay - params.growthfactor);
 
-    int step = (int)(dets[layer].step/dets[layer].elemSize());
+	//limit_x ref: centro da wavelet
+	int limit_x = MIN(deltax + skx + params.growthfactor, ux - marginH);
+	int limit_y = MIN(deltay + sky + params.growthfactor, uy - marginH);
 
-    for( int i = margin; i < layer_rows - margin; i++ )
-    {
-        const float* det_ptr = dets[layer].ptr<float>(i);
-        const float* trace_ptr = traces[layer].ptr<float>(i);
-        for( int j = margin; j < layer_cols-margin; j++ )
-        {
-            float val0 = det_ptr[j];
-            if( val0 > hessianThreshold )
-            {
-                /* Coordinates for the start of the wavelet in the sum image. There
-                   is some integer division involved, so don't try to simplify this
-                   (cancel out sampleStep) without checking the result is the same */
-                int sum_i = sampleStep*(i-(size/2)/sampleStep);
-                int sum_j = sampleStep*(j-(size/2)/sampleStep);
+	//sum_i ref: comeco da wavelet
+	int sum_i, sum_j;
+	sum_i = margin_y - size/2;
 
-                /* The 3x3x3 neighbouring samples around the maxima.
-                   The maxima is included at N9[1][4] */
+	//DEBUG
+	/*
+	std::cout << "Analisando o máximo da imagem Hessiana, na camada " << layer << std::endl;
+	std::cout << "A wavelet vai de " << margin_x << " até " << limit_x << std::endl;
+	std::cout << "Pulando de " << sampleStep << " em " << sampleStep << std::endl;
+	*/
 
-                const float *det1 = &dets[layer-1].at<float>(i, j);
-                const float *det2 = &dets[layer].at<float>(i, j);
-                const float *det3 = &dets[layer+1].at<float>(i, j);
-                float N9[3][9] = { { det1[-step-1], det1[-step], det1[-step+1],
-                                     det1[-1]  , det1[0] , det1[1],
-                                     det1[step-1] , det1[step] , det1[step+1]  },
-                                   { det2[-step-1], det2[-step], det2[-step+1],
-                                     det2[-1]  , det2[0] , det2[1],
-                                     det2[step-1] , det2[step] , det2[step+1]  },
-                                   { det3[-step-1], det3[-step], det3[-step+1],
-                                     det3[-1]  , det3[0] , det3[1],
-                                     det3[step-1] , det3[step] , det3[step+1]  } };
+	if( !mask_sum.empty() )
+		resizeHaarPattern( dm, &Dm, NM, 9, size, mask_sum.cols );
 
-                /* Check the mask - why not just check the mask at the center of the wavelet? */
-                if( !mask_sum.empty() )
-                {
-                    const int* mask_ptr = &mask_sum.at<int>(sum_i, sum_j);
-                    float mval = calcHaarPattern( mask_ptr, &Dm, 1 );
-                    if( mval < 0.5 )
-                        continue;
-                }
+	int step = (int)(dets[layer].step/dets[layer].elemSize());
 
-                /* Non-maxima suppression. val0 is at N9[1][4]*/
-                if( val0 > N9[0][0] && val0 > N9[0][1] && val0 > N9[0][2] &&
-                    val0 > N9[0][3] && val0 > N9[0][4] && val0 > N9[0][5] &&
-                    val0 > N9[0][6] && val0 > N9[0][7] && val0 > N9[0][8] &&
-                    val0 > N9[1][0] && val0 > N9[1][1] && val0 > N9[1][2] &&
-                    val0 > N9[1][3]                    && val0 > N9[1][5] &&
-                    val0 > N9[1][6] && val0 > N9[1][7] && val0 > N9[1][8] &&
-                    val0 > N9[2][0] && val0 > N9[2][1] && val0 > N9[2][2] &&
-                    val0 > N9[2][3] && val0 > N9[2][4] && val0 > N9[2][5] &&
-                    val0 > N9[2][6] && val0 > N9[2][7] && val0 > N9[2][8] )
-                {
-                    /* Calculate the wavelet center coordinates for the maxima */
-                    float center_i = sum_i + (size-1)*0.5f;
-                    float center_j = sum_j + (size-1)*0.5f;
+	for( int i = 0; sum_i + size/2 <= limit_y; i++, sum_i += sampleStep ) {
+		sum_j = margin_x - size/2;
+		const float* det_ptr = dets[layer].ptr<float>(i);
+		const float* trace_ptr = traces[layer].ptr<float>(i);
+		for(int j = 0; sum_j + size/2 <= limit_x; sum_j += sampleStep, j++ ) {
+			float val0 = det_ptr[j];
+			if(val0 > hessianThreshold) {
+				/* The 3x3x3 neighbouring samples around the maxima.
+				   The maxima is included at N9[1][4] */
+				const float *det1 = &dets[layer-1].at<float>(i, j);
+				const float *det2 = &dets[layer].at<float>(i, j);
+				const float *det3 = &dets[layer+1].at<float>(i, j);
+				float N9[3][9] = { { det1[-step-1], det1[-step], det1[-step+1],
+					det1[-1]  , det1[0] , det1[1],
+					det1[step-1] , det1[step] , det1[step+1]  },
+					  { det2[-step-1], det2[-step], det2[-step+1],
+						  det2[-1]  , det2[0] , det2[1],
+						  det2[step-1] , det2[step] , det2[step+1]  },
+					  { det3[-step-1], det3[-step], det3[-step+1],
+						  det3[-1]  , det3[0] , det3[1],
+						  det3[step-1] , det3[step] , det3[step+1]  } };
 
-                    KeyPoint kpt( center_j, center_i, (float)sizes[layer],
-                                  -1, val0, octave, CV_SIGN(trace_ptr[j]) );
+				/* Check the mask - why not just check the mask at the center of the wavelet? */
+				if( !mask_sum.empty() )
+				{
+					const int* mask_ptr = &mask_sum.at<int>(sum_i, sum_j);
+					float mval = calcHaarPattern( mask_ptr, &Dm, 1 );
+					if( mval < 0.5 )
+						continue;
+				}
 
-                    /* Interpolate maxima location within the 3x3x3 neighbourhood  */
-                    int ds = size - sizes[layer-1];
-                    int interp_ok = interpolateKeypoint( N9, sampleStep, sampleStep, ds, kpt );
+				/* Non-maxima suppression. val0 is at N9[1][4]*/
+				if( val0 > N9[0][0] && val0 > N9[0][1] && val0 > N9[0][2] &&
+						val0 > N9[0][3] && val0 > N9[0][4] && val0 > N9[0][5] &&
+						val0 > N9[0][6] && val0 > N9[0][7] && val0 > N9[0][8] &&
+						val0 > N9[1][0] && val0 > N9[1][1] && val0 > N9[1][2] &&
+						val0 > N9[1][3]                    && val0 > N9[1][5] &&
+						val0 > N9[1][6] && val0 > N9[1][7] && val0 > N9[1][8] &&
+						val0 > N9[2][0] && val0 > N9[2][1] && val0 > N9[2][2] &&
+						val0 > N9[2][3] && val0 > N9[2][4] && val0 > N9[2][5] &&
+						val0 > N9[2][6] && val0 > N9[2][7] && val0 > N9[2][8] )
+				{
+					/* Calculate the wavelet center coordinates for the maxima */
+					float center_i = sum_i + (size-1)*0.5f;
+					float center_j = sum_j + (size-1)*0.5f;
 
-                    /* Sometimes the interpolation step gives a negative size etc. */
-                    if( interp_ok  )
-                    {
-                        /*printf( "KeyPoint %f %f %d\n", point.pt.x, point.pt.y, point.size );*/
-                        cv::AutoLock lock(findMaximaInLayer_m);
-                        keypoints.push_back(kpt);
-                    }
-                }
-            }
-        }
-    }
+					KeyPoint kpt( center_j, center_i, (float)sizes[layer],
+							-1, val0, octave, CV_SIGN(trace_ptr[j]) );
+
+					/* Interpolate maxima location within the 3x3x3 neighbourhood  */
+					int ds = size - sizes[layer-1];
+					int interp_ok = interpolateKeypoint( N9, sampleStep, sampleStep, ds, kpt );
+
+					/* Sometimes the interpolation step gives a negative size etc. */
+					if( interp_ok  )
+					{
+						/*printf( "KeyPoint %f %f %d\n", point.pt.x, point.pt.y, point.size );*/
+						cv::AutoLock lock(findMaximaInLayer_m);
+						keypoints.push_back(kpt);
+					}
+				}
+			}
+		}
+	}
 }
 
 struct KeypointGreater
 {
-    inline bool operator()(const KeyPoint& kp1, const KeyPoint& kp2) const
-    {
-        if(kp1.response > kp2.response) return true;
-        if(kp1.response < kp2.response) return false;
-        if(kp1.size > kp2.size) return true;
-        if(kp1.size < kp2.size) return false;
-        if(kp1.octave > kp2.octave) return true;
-        if(kp1.octave < kp2.octave) return false;
-        if(kp1.pt.y < kp2.pt.y) return false;
-        if(kp1.pt.y > kp2.pt.y) return true;
-        return kp1.pt.x < kp2.pt.x;
-    }
+	inline bool operator()(const KeyPoint& kp1, const KeyPoint& kp2) const
+	{
+		if(kp1.response > kp2.response) return true;
+		if(kp1.response < kp2.response) return false;
+		if(kp1.size > kp2.size) return true;
+		if(kp1.size < kp2.size) return false;
+		if(kp1.octave > kp2.octave) return true;
+		if(kp1.octave < kp2.octave) return false;
+		if(kp1.pt.y < kp2.pt.y) return false;
+		if(kp1.pt.y > kp2.pt.y) return true;
+		return kp1.pt.x < kp2.pt.x;
+	}
 };
 
 
 static void fastFoveatedHessianDetector( const Mat& sum, const Mat& mask_sum, vector<KeyPoint>& keypoints, FoveatedHessianDetectorParams params)
 {
-    /* Sampling step along image x and y axes at first octave. This is doubled
-       for each additional octave. WARNING: Increasing this improves speed,
-       however keypoint extraction becomes unreliable. */
-    const int SAMPLE_STEP0 = 1;
+	/* Sampling step along image x and y axes at first octave. This is doubled
+	   for each additional octave. WARNING: Increasing this improves speed,
+	   however keypoint extraction becomes unreliable. */
+	const int SAMPLE_STEP0 = 1;
 
 	int nOctaveLayers = params.nOctaveLayers;
-//	int nOctaves = params.nOctaves;
+	//	int nOctaves = params.nOctaves;
 	float hessianThreshold = params.hessianThreshold;
 
-    int nTotalLayers = (nOctaveLayers+2)*params.beta.size();
-    int nMiddleLayers = nOctaveLayers*params.beta.size();
+	int nTotalLayers = (nOctaveLayers+2)*params.beta.size();
+	int nMiddleLayers = nOctaveLayers*params.beta.size();
 
-    vector<Mat> dets(nTotalLayers);
-    vector<Mat> traces(nTotalLayers);
-    vector<int> sizes(nTotalLayers);
-    vector<int> sampleSteps(nTotalLayers);
-    vector<int> middleIndices(nMiddleLayers);
+	vector<Mat> dets(nTotalLayers);
+	vector<Mat> traces(nTotalLayers);
+	vector<int> sizes(nTotalLayers);
+	vector<int> sampleSteps(nTotalLayers);
+	vector<int> middleIndices(nMiddleLayers);
 
 	vector<int> foveaLevel(nTotalLayers);
 	vector<int> margin(nTotalLayers);
 
-    keypoints.clear();
+	keypoints.clear();
 
-    // Allocate space and calculate properties of each layer
-    int index = 0, middleIndex = 0, step = SAMPLE_STEP0;
+	// Allocate space and calculate properties of each layer
+	int index = 0, middleIndex = 0, step = SAMPLE_STEP0;
 
 	for(unsigned int i = 0; i < params.beta.size(); i++) {
-        for( int layer = 0; layer < nOctaveLayers+2; layer++ ) {
-            /* The integral image sum is one pixel bigger than the source image*/
+		for( int layer = 0; layer < nOctaveLayers+2; layer++ ) {
+			/* The integral image sum is one pixel bigger than the source image*/
 			margin[index] = ((SURF_HAAR_SIZE0+SURF_HAAR_SIZE_INC*(params.nOctaveLayers+1))<<(params.eta[i]-1))/2;
 			foveaLevel[index] = params.level[i];
-            dets[index].create( params.uy, params.ux, CV_32F );
-            traces[index].create( params.uy, params.ux, CV_32F );
-            sizes[index] = (SURF_HAAR_SIZE0 + SURF_HAAR_SIZE_INC*layer) << (params.eta[i] - 1);
-            sampleSteps[index] = 1 << (params.eta[i] - 1);
+			dets[index].create( params.uy, params.ux, CV_32F );
+			traces[index].create( params.uy, params.ux, CV_32F );
+			sizes[index] = (SURF_HAAR_SIZE0 + SURF_HAAR_SIZE_INC*layer) << (params.eta[i] - 1);
+			sampleSteps[index] = 1 << (params.eta[i] - 1);
 
-            if( 0 < layer && layer <= nOctaveLayers )
-                middleIndices[middleIndex++] = index;
-//			std::cout << index << " " << layer << ", sampleStep = " << sampleSteps[index] << "\t";
-//			std::cout << "Size: " << sizes[index] << ", eta = " << params.eta[i] << std::endl;
-            index++;
-        }
-    }
+			if( 0 < layer && layer <= nOctaveLayers )
+				middleIndices[middleIndex++] = index;
+			//			std::cout << index << " " << layer << ", sampleStep = " << sampleSteps[index] << "\t";
+			//			std::cout << "Size: " << sizes[index] << ", eta = " << params.eta[i] << std::endl;
+			index++;
+		}
+	}
 
-    // Calculate hessian determinant and trace samples in each layer
-    parallel_for_( Range(0, nTotalLayers),
-                   SURFBuildInvoker(sum, sizes, sampleSteps, dets, traces, params, margin, foveaLevel) );
+	// Calculate hessian determinant and trace samples in each layer
+	parallel_for_( Range(0, nTotalLayers),
+			SURFBuildInvoker(sum, sizes, sampleSteps, dets, traces, params, margin, foveaLevel) );
 
-    // Find maxima in the determinant of the hessian
-    parallel_for_( Range(0, nMiddleLayers),
-                   SURFFindInvoker(sum, mask_sum, dets, traces, sizes,
-                                   sampleSteps, middleIndices, keypoints,
-                                   nOctaveLayers, hessianThreshold, params, margin, foveaLevel) );
+	// Find maxima in the determinant of the hessian
+	parallel_for_( Range(0, nMiddleLayers),
+			SURFFindInvoker(sum, mask_sum, dets, traces, sizes,
+				sampleSteps, middleIndices, keypoints,
+				nOctaveLayers, hessianThreshold, params, margin, foveaLevel) );
 
-    std::sort(keypoints.begin(), keypoints.end(), KeypointGreater());
+	std::sort(keypoints.begin(), keypoints.end(), KeypointGreater());
 }
 
 
@@ -506,18 +544,18 @@ static void foveatedHessianDetector(InputArray _img, InputArray _mask, vector<Ke
 	Mat img = _img.getMat();
 	Mat mask = _mask.getMat();
 
-    integral(img, sum, CV_32S);
+	integral(img, sum, CV_32S);
 	if(!mask.empty()) {
 		cv::min(mask, 1, mask1);
 		integral(mask1, msum, CV_32S);
 	}
 
 	CV_Assert(!img.empty() && img.depth() == CV_8U);
-    if( img.channels() > 1 )
-        cvtColor(img, img, COLOR_BGR2GRAY);
-    CV_Assert(params.hessianThreshold >= 0);
-    CV_Assert(params.nOctaves > 0);
-    CV_Assert(params.nOctaveLayers > 0);
+	if( img.channels() > 1 )
+		cvtColor(img, img, COLOR_BGR2GRAY);
+	CV_Assert(params.hessianThreshold >= 0);
+	CV_Assert(params.nOctaves > 0);
+	CV_Assert(params.nOctaveLayers > 0);
 
 	fastFoveatedHessianDetector(sum, msum, keypoints, params);
 }

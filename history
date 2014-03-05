@@ -37,5 +37,16 @@
 04/03/14 22:54:38 observei agora que no código antigo (caixa dos remédios), os valores obtidos em amostras espaçadas na imagem original são armazenadas de forma contígua em dets e trace. TODO: refletir se é possível com isso reduzir o tamanho alocado. Como é apenas um consumo maior de memória, vou deixar para depois.
 04/03/14 23:07:57 foveatedHessianDetector.h: atualizado ux e uy em FoveatedHessianDetectorParams (e os argumentos em test.cpp)
 04/03/14 23:09:01 não sei se as alterações no SURFBuildInvoker estão ok, passarei agora para o SURFFindInvoker
+======================================================================================
 04/03/14 23:17:00 foveatedHessianDetector.h: alterando para incluir FoveatedHessianDetectorParams, margin e foveaLevel como parâmetros em SURFFindInvoker, o que inclui também a adição desses atributos em SURFFindInvoker
-04/03/14 23:21:07 alguns parâmetros em findMaximaInLayer talvez não façam sentido da forma como estou implementando, são eles: octave e layer
+04/03/14 23:21:07 alguns parâmetros em findMaximaInLayer talvez não façam sentido da forma como estou implementando, são eles: octave e layer. Octave figura como sexto argumento no construtor do Keypoint.
+04/03/14 23:55:49 foveatedHessianDetector.h: SURFFindInvoker: valor da variável octave alterar para corresponder ao valor eta estabelecido no modelo de foveamento
+04/03/14 23:59:38 é necessário entender algumas variáveis da função findMaximaInLayer
+05/03/14 00:01:03 uma primeira alteração já pode ser feita nos dois laços internos em findMaximaInLayer para determinar se o ponto passa do threshold ou não
+05/03/14 00:07:34 foveatedHessianDetector.h: findMaximaInLayer: como os dois laços agora simulam os passos de amostragem na imagem original, não precisa-se mais recuperar a referência original (sum_i, sum_j) a partir de (i, j)
+05/03/14 00:35:53 foveatedHessianDetector.h: findMaximaInLayer: internamente a esses dois laços, nenhuma mudança
+05/03/14 00:36:40 foveatedHessianDetector.h: acrescentado valores iniciais para fx, fy, growthfactor, que não inicializavam em 0
+05/03/14 00:37:41 foveatedHessianDetector.h: agora o vetor beta realmente faz com que os níveis sejam ignorados ou não
+05/03/14 00:46:14 testes realizados e aparentemente está tudo ok, agora é necessária a realização de testes
+======================================================================================
+
