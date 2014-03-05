@@ -28,4 +28,14 @@
 04/03/14 19:55:45 foveatedHessianDetector.h: fastFoveatedHessianDetector: acrescentado o vetor foveaLevel e seus valores inicializados
 04/03/14 20:04:38 vale uma observação importante: a oitava na frequência original é 0 ou 1? Vou assumir como está na tese, isso é, oitavas começam em 1
 04/03/14 20:47:51 valores de margin e sizes impressos na saída padrão, conferi e os resultados estão condizentes
-04/03/14 21:17:19 acrescentado em SURFBuildInvoker os parâmetros também de margin e foveaLevel, assim como os atributos locais dessa classe. A chamada de SURFBuildInvoker também foi alterada para incluir os respectivos argumentos.
+04/03/14 21:17:19 foveatedHessianDetector.h: acrescentado em SURFBuildInvoker os parâmetros também de margin e foveaLevel, assim como os atributos locais dessa classe. A chamada de SURFBuildInvoker também foi alterada para incluir os respectivos argumentos
+04/03/14 21:27:39 foveatedHessianDetector.h: tanto margin como foveaLevel são repassados de SURFBuildInvoker para calcLayerDetAndTrace. Para isso, a assinatura dessa última função foi reescrita
+04/03/14 21:30:56 foveatedHessianDetector.h: em calcLayerDetAndTrace, como já há uma variável chamada margin, o parâmetro foi renomeado para marginH
+04/03/14 22:15:05 importante: as matrizes dets e trace são redimensionadas, alterações serão feitas para que elas não seja redimensionadas
+04/03/14 22:20:08 foveatedHessianDetector.h: acrescentado o growth factor (antigo foveafactor)
+04/03/14 22:37:20 foveatedHessianDetector.h: fastFoveatedHessianDetector: dets e traces são criados com o mesmo tamanho da imagem original
+04/03/14 22:54:38 observei agora que no código antigo (caixa dos remédios), os valores obtidos em amostras espaçadas na imagem original são armazenadas de forma contígua em dets e trace. TODO: refletir se é possível com isso reduzir o tamanho alocado. Como é apenas um consumo maior de memória, vou deixar para depois.
+04/03/14 23:07:57 foveatedHessianDetector.h: atualizado ux e uy em FoveatedHessianDetectorParams (e os argumentos em test.cpp)
+04/03/14 23:09:01 não sei se as alterações no SURFBuildInvoker estão ok, passarei agora para o SURFFindInvoker
+04/03/14 23:17:00 foveatedHessianDetector.h: alterando para incluir FoveatedHessianDetectorParams, margin e foveaLevel como parâmetros em SURFFindInvoker, o que inclui também a adição desses atributos em SURFFindInvoker
+04/03/14 23:21:07 alguns parâmetros em findMaximaInLayer talvez não façam sentido da forma como estou implementando, são eles: octave e layer

@@ -35,7 +35,7 @@ int main(int argc, char** argv)
     SurfFeatureDetector detector(400);
     vector<KeyPoint> keypoints1, keypoints2;
 
-	FoveatedHessianDetectorParams params(320, 240, "fovea1.yml");
+	FoveatedHessianDetectorParams params(img1.cols, img1.rows, "fovea1.yml");
 	foveatedHessianDetector(img1, Mat(), keypoints1, params);
 	foveatedHessianDetector(img2, Mat(), keypoints2, params);
     //detector.detect(img1, keypoints1);
