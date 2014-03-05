@@ -55,6 +55,7 @@ Second, use the struct FoveatedHessianDetectorParams to specify:
 - the YML file path containing the foveated model parameters (no default file)
 - hessian threshold (default value: 100);
 - the number of layers in each octave (it is preferable to use default value: 3).
+
 Use FoveatedHessianDetectorParams(int imageWidth, int imageHeight, String ymlFile) construtor to specify the original image size and the yml file file path.
 
 After that, use foveatedHessianDetector function:
