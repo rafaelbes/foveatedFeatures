@@ -8,13 +8,17 @@ Rafael Beserra Gomes, Bruno Motta de Carvalho, Luiz Marcos Garcia Gonçalves, Vi
 
 Foveation variable summary
 ----------------
-The feature extraction process is done by a sequence of n passes. This differs slight from the original paper.
+The feature extraction process is done by a sequence of n passes. This differs slight from the original paper. If you want a easy configuration, use one of these values:
+
+- numberOfLevels = 4, etavector = [4, 3, 2, 1], levels = [0, 1, 2, 3], b = [1, 1, 1, 1]
+- numberOfLevels = 5, etavector = [5, 4, 3, 2, 1], levels = [0, 1, 2, 3, 4], b = [1, 1, 1, 1]
 
 In the original paper, there is a B vector and a eta vector, each one with numberOfLevels elements. For example, 4 levels, B = {1, 1, 0, 1} and eta = {4, 3, 2, 1}, this set means that there is 4 passes for feature extraction:
 - first level (largest one) computes features in the forth octave
 - second level computes features in the third octave
 - third level would compute features in the second octave, but is does not because B[3] = 0
 - forth level computes features in the first octave
+
 See section 3.2 from neurocomputing paper for examples.
 
 In this implementation, bvector (B), etavector (eta) and levelvector have n elements, the set {bvector[i], etavector[i], levelvector[i]} represents a feature extraction pass.
@@ -22,11 +26,11 @@ In this implementation, bvector (B), etavector (eta) and levelvector have n elem
 - etavector: [e1, e2, ..., en]: a vector where ei is the octave (> 0) for which the feature extraction pass number i should be performed
 - levelvector: [l1, l2, ..., ln]: a vector where li is the foveated model level (>= 0 and < numberOfLevels) for which the feature extraction pass number i should be performed
 
-For example: 4 levels, B = {1, 0, 1, 1, 1}, eta = {3, 2, 2, 1, 1} and levels = {3, 3, 2, 2, 0}, this set means that there is 5 passes for feature extraction:
-- first level (largest one) computes features in the first octave (levels[5] = 0 and eta[5] = 1)
-- second level has no feature extraction
-- third level computes features in the first and second octave (levels[4] = 2, eta[4] = 1 and levels[3] = 2, eta[3] = 2
-- forth level computes features in the third octave (levels[1] = 3, eta[1] = 3 and levels[2] = 3, eta[2] = 2, but B[2] = 0, then second octave is not computed)
+For example: 4 levels, B = {1, 0, 1, 1, 1}, eta = {3, 4, 2, 3, 1} and levels = {0, 0, 1, 1, 3}, this set means that there is 5 passes for feature extraction:
+- first level (largest one) computes features in the third octave (levels[1] = 0, levels[2] = 0, eta[1] = 3, eta[2] = 4, but B[2] = 0)
+- second level computes features in the second and third octave (levels[3] = 1, levels[4] = 1, eta[3] = 2, eta[4] = 3)
+- third level has no feature extraction (since no level = 2)
+- forth level computes features in the first octave (levels[5] = 3, eta[5] = 1)
 
 Usage
 ----------------
