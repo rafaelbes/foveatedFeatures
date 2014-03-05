@@ -11,7 +11,7 @@ Foveation variable summary
 The feature extraction process is done by a sequence of n passes. This differs slight from the original paper. If you want a easy configuration, use one of these values:
 
 - numberOfLevels = 4, etavector = [4, 3, 2, 1], levels = [0, 1, 2, 3], b = [1, 1, 1, 1]
-- numberOfLevels = 5, etavector = [5, 4, 3, 2, 1], levels = [0, 1, 2, 3, 4], b = [1, 1, 1, 1]
+- numberOfLevels = 5, etavector = [5, 4, 3, 2, 1], levels = [0, 1, 2, 3, 4], b = [1, 1, 1, 1, 1]
 
 In the original paper, there are a B vector and a eta vector, each one with numberOfLevels elements. For example, 4 levels, B = {1, 1, 0, 1} and eta = {4, 3, 2, 1}, this set means that there are 4 passes for feature extraction:
 - first level (largest one) computes features in the fourth octave
