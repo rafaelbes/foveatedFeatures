@@ -6,15 +6,38 @@ It uses Opencv2.4.8 for implementation and no more others dependencies.
 Consider citing the related paper to this project:
 Rafael Beserra Gomes, Bruno Motta de Carvalho, Luiz Marcos Garcia Gonçalves, Visual attention guided features selection with foveated images, Neurocomputing, Volume 120, 23 November 2013, Pages 34-44, ISSN 0925-2312, http://dx.doi.org/10.1016/j.neucom.2012.10.033.
 
+Foveation variable summary
+----------------
+The feature extraction process is done by a sequence of n passes. This differs slight from the original paper.
+
+In the original paper, there is a B vector and a eta vector, each one with numberOfLevels elements. For example, 4 levels, B = {1, 1, 0, 1} and eta = {4, 3, 2, 1}, this set means that there is 4 passes for feature extraction:
+- first level (largest one) computes features in the forth octave
+- second level computes features in the third octave
+- third level would compute features in the second octave, but is does not because B[3] = 0
+- forth level computes features in the first octave
+See section 3.2 from neurocomputing paper for examples.
+
+In this implementation, bvector (B), etavector (eta) and levelvector have n elements, the set {bvector[i], etavector[i], levelvector[i]} represents a feature extraction pass.
+- bvector: [b1, b2, ..., bn]: a vector where bi is 0 if the feature extraction pass number i should be discarded or 1, otherwise
+- etavector: [e1, e2, ..., en]: a vector where ei is the octave (> 0) for which the feature extraction pass number i should be performed
+- levelvector: [l1, l2, ..., ln]: a vector where li is the foveated model level (>= 0 and < numberOfLevels) for which the feature extraction pass number i should be performed
+
+For example: 4 levels, B = {1, 0, 1, 1, 1}, eta = {3, 2, 2, 1, 1} and levels = {3, 3, 2, 2, 0}, this set means that there is 5 passes for feature extraction:
+- first level (largest one) computes features in the first octave (levels[5] = 0 and eta[5] = 1)
+- second level has no feature extraction
+- third level computes features in the first and second octave (levels[4] = 2, eta[4] = 1 and levels[3] = 2, eta[3] = 2
+- forth level computes features in the third octave (levels[1] = 3, eta[1] = 3 and levels[2] = 3, eta[2] = 2, but B[2] = 0, then second octave is not computed)
+
 Usage
 ----------------
 First, you must create a yml file that contains initial values of the foveated model. You MUST specify the following parameters:
 - smallestLevelWidth: 0 < value < imageWidth
 - smallestLevelHeight: 0 < value < imageHeight
-- numberOfLevels: 
-- bvector
-- etavector
-- levelvector: a 
+- numberOfLevels: value > 1
+- bvector: [b1, b2, ..., bn], where each value is 0 or 1
+- etavector: [e1, e2, ..., en], where each value > 0
+- levelvector: [l1, l2, ..., ln], where value >= 0 and value < numberOfLevels
+Note that these last 3 sequence must have the same number of elements
 
 Second, use the struct FoveatedHessianDetectorParams to specify:
 - the image size (no default value)
