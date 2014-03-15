@@ -53,3 +53,9 @@
 05/03/14 14:58:24 passando agora todo cálculo de foveamento para linearFoveation.h
 05/03/14 15:16:49 acrescentado o método fixFovea que corrigi a posição da fóvea para dentro dos limites do domínio da imagem
 05/03/14 15:20:13 o atributo nOctaves foi eliminado, pois essa informação está implícita no vetor eta
+======================================================================================
+14/03/14 21:38:10 apaguei o test.cpp que será o match.cpp (apenas para casar features entre duas imagens) e o extract.cpp (extrai features de uma imagem e possui comandos via teclado para alterar os parâmetros de foveamento)
+14/03/14 21:39:20 foveatedHessianDetector.h: sempre que a extração foveada for aplicada, uma checagem dos parâmetros de foveamento é realizada
+14/03/14 21:40:04 foveatedHessianDetector.h: acrescentada a função drawFoveatedLevels(InputArray _img, FoveatedHessianDetectorParams params) que desenha em img os contornos do modelo de foveamento
+14/03/14 21:41:00 linearFoveation.h: fixFovea agora leva em conta o growth factor
+14/03/14 21:41:27 linearFoveation.h: acrescentado o método setFovea(int imgX, int imgY), isto é, as coordenadas da fóvea no sistema de referências da imagem original
