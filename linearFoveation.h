@@ -47,10 +47,16 @@ struct LinearFoveation {
 
 	//fix the fovea position: if fovea is outsite image domain, snap it to the closest valid position independently for each coordinate
 	inline void fixFovea() {
-		fx = MIN((ux - wx)/2, fx);
-		fx = MAX((wx - ux)/2, fx);
-		fy = MIN((uy - wy)/2, fy);
-		fy = MAX((wy - uy)/2, fy);
+		fx = MIN((ux - wx)/2 - growthfactor, fx);
+		fx = MAX((wx - ux)/2 + growthfactor, fx);
+		fy = MIN((uy - wy)/2 - growthfactor, fy);
+		fy = MAX((wy - uy)/2 + growthfactor, fy);
+	}
+
+	void setFovea(int imgX, int imgY) {
+		fx = imgX - ux/2;
+		fy = imgY - uy/2;
+		fixFovea();
 	}
 
 	void check() {

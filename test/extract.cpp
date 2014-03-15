@@ -44,17 +44,27 @@ int main(int argc, char** argv)
 		// detecting keypoints
 		vector<KeyPoint> keypoints1;
 
+		int64 t = cv::getTickCount();
 		foveatedHessianDetector(img1, Mat(), keypoints1, params);
+		t = cv::getTickCount() - t;
+		std::cout << "Feature extraction = " << t*1000/cv::getTickFrequency() << std::endl;
 
 		// computing descriptors
 		SurfDescriptorExtractor extractor;
 		Mat descriptors1;
+
+		t = cv::getTickCount();
 		extractor.compute(img1, keypoints1, descriptors1);
+		t = cv::getTickCount() - t;
+		std::cout << "Feature description = " << t*1000/cv::getTickFrequency() << std::endl;
 
 		// drawing the results
 		Mat outputImg;
 		drawKeypoints(img1, keypoints1, outputImg, Scalar::all(-1), DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+		drawFoveatedLevels(outputImg, params);
+
 	    imshow("keypoints", outputImg);
+
 	    char key = waitKey(33);
 		if(key == 'q') break;
 		if(key == 'a') {

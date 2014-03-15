@@ -2,7 +2,7 @@
 
 /*
    Copyright (C) 2014, Rafael Beserra <rafaelufrn@gmail.com>
-   If you use this software for academic purposes, consider citing the related paper: Rafael Beserra Gomes, Bruno Motta de Carvalho, Luiz Marcos Garcia Gonçalves, Visual attention guided features selection with foveated images, Neurocomputing, Volume 120, 23 November 2013, Pages 34-44, ISSN 0925-2312, http://dx.doi.org/10.1016/j.neucom.2012.10.033.
+   If you use this software for research purposes, consider citing the related paper: Rafael Beserra Gomes, Bruno Motta de Carvalho, Luiz Marcos Garcia Gonçalves, Visual attention guided features selection with foveated images, Neurocomputing, Volume 120, 23 November 2013, Pages 34-44, ISSN 0925-2312, http://dx.doi.org/10.1016/j.neucom.2012.10.033.
 
    This file is part of foveatedFeatures software.
 
@@ -560,6 +560,7 @@ static void fastFoveatedHessianDetector( const Mat& sum, const Mat& mask_sum, ve
 		}
 	}
 
+	params.foveaModel.check();
 	// Calculate hessian determinant and trace samples in each layer
 	parallel_for_( Range(0, nTotalLayers),
 			SURFBuildInvoker(sum, sizes, sampleSteps, dets, traces, params, margin, foveaLevel) );
@@ -596,6 +597,21 @@ static void foveatedHessianDetector(InputArray _img, InputArray _mask, vector<Ke
 
 	fastFoveatedHessianDetector(sum, msum, keypoints, params);
 }
+
+//função para desenhar
+static void drawFoveatedLevels(InputArray _img, FoveatedHessianDetectorParams params) {
+	params.foveaModel.check();
+	Mat img = _img.getMat();
+	int growthfactor = params.foveaModel.growthfactor;
+	for(int i = 0; i <= params.foveaModel.m; i++) {
+		int dx = params.foveaModel.getDeltax(i);
+		int dy = params.foveaModel.getDeltay(i);
+		int sx = params.foveaModel.getSizex(i);
+		int sy = params.foveaModel.getSizey(i);
+		cv::rectangle(img, cv::Point(dx-growthfactor, dy-growthfactor), cv::Point(dx+sx+growthfactor, dy+sy+growthfactor), cv::Scalar(255, 255, 255));
+	}
+}
+
 
 #endif
 
