@@ -23,6 +23,8 @@ static void on_mouse(int event, int x, int y, int flags, void *_param) {
 
 int main(int argc, char** argv)
 {
+	int useFovea = 1;
+
     if(argc != 3)
     {
         help();
@@ -45,7 +47,13 @@ int main(int argc, char** argv)
 		vector<KeyPoint> keypoints1;
 
 		int64 t = cv::getTickCount();
-		foveatedHessianDetector(img1, Mat(), keypoints1, params);
+		
+		if(useFovea) {
+			foveatedHessianDetector(img1, Mat(), keypoints1, params);
+		} else {
+			SurfFeatureDetector detector(400);
+			detector.detect(img1, keypoints1);
+		}
 		t = cv::getTickCount() - t;
 		std::cout << "Feature extraction = " << t*1000/cv::getTickFrequency() << std::endl;
 
@@ -67,16 +75,15 @@ int main(int argc, char** argv)
 
 	    char key = waitKey(33);
 		if(key == 'q') break;
-		if(key == 'a') {
-			params.foveaModel.growthfactor += 10;
-		}
-		if(key == 'd') {
-			params.foveaModel.growthfactor = MAX(0, params.foveaModel.growthfactor-10);
-		}
+		if(key == 'd') params.foveaModel.wx = MIN(params.foveaModel.ux-1, params.foveaModel.wx + 10);
+		if(key == 'a') params.foveaModel.wx = MAX(1, params.foveaModel.wx-10);
+		if(key == 'c') params.foveaModel.wy = MIN(params.foveaModel.uy-1, params.foveaModel.wy + 10);
+		if(key == 'z') params.foveaModel.wy = MAX(1, params.foveaModel.wy-10);
 		if(key >= '1' && key <= '9') {
 			if(key - '1' < params.foveaModel.beta.size())
 				params.foveaModel.beta[key - '1'] = 1 - params.foveaModel.beta[key - '1'];
 		}
+		if(key == 'f') useFovea = 1 - useFovea;
 	}
 
     return 0;
