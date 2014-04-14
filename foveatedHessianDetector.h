@@ -103,7 +103,6 @@ struct FoveatedHessianDetectorParams {
 		fs["foveax"] >> foveaModel.fx;
 		fs["foveay"] >> foveaModel.fy;
 		fs["hessianThreshold"] >> hessianThreshold;
-		fs["growthfactor"] >> foveaModel.growthfactor;
 		fs.release();
 		foveaModel.ux = imageWidth;
 		foveaModel.uy = imageHeight;
@@ -177,12 +176,12 @@ static void calcLayerDetAndTrace( const Mat& sum, int size, int sampleStep,
 
 	//margin ref: centro da wavelet
 	//margin_x ref: centro da wavelet
-	int margin_x = MAX(marginH, deltax - params.foveaModel.growthfactor);
-	int margin_y = MAX(marginH, deltay - params.foveaModel.growthfactor);
+	int margin_x = MAX(marginH, deltax);
+	int margin_y = MAX(marginH, deltay);
 
 	//limit_x ref: centro da wavelet
-	int limit_x = MIN(deltax + skx + params.foveaModel.growthfactor, params.foveaModel.ux - marginH);
-	int limit_y = MIN(deltay + sky + params.foveaModel.growthfactor, params.foveaModel.uy - marginH);
+	int limit_x = MIN(deltax + skx, params.foveaModel.ux - marginH);
+	int limit_y = MIN(deltay + sky, params.foveaModel.uy - marginH);
 
 	//sum_i ref: comeco da wavelet
 	int sum_i, sum_j;
@@ -210,7 +209,7 @@ static void calcLayerDetAndTrace( const Mat& sum, int size, int sampleStep,
 
 	for(int  i = 0; sum_i + size/2 <= limit_y; i++, sum_i += sampleStep ) {
 		sum_j = margin_x - size/2;
-		const int* sum_ptr = sum.ptr<int>(sum_i);
+		const int* sum_ptr = sum.ptr<int>(sum_i, sum_j);
 		float* det_ptr = &det.at<float>(i, 0);
 		float* trace_ptr = &trace.at<float>(i, 0);
 		for(int j = 0; sum_j + size/2 <= limit_x; sum_j += sampleStep, j++ ) {
@@ -406,12 +405,12 @@ void SURFFindInvoker::findMaximaInLayer( const Mat& sum, const Mat& mask_sum,
 
 	//margin ref: centro da wavelet
 	//margin_x ref: centro da wavelet
-	int margin_x = MAX(marginH, deltax - params.foveaModel.growthfactor);
-	int margin_y = MAX(marginH, deltay - params.foveaModel.growthfactor);
+	int margin_x = MAX(marginH, deltax);
+	int margin_y = MAX(marginH, deltay);
 
 	//limit_x ref: centro da wavelet
-	int limit_x = MIN(deltax + skx + params.foveaModel.growthfactor, params.foveaModel.ux - marginH);
-	int limit_y = MIN(deltay + sky + params.foveaModel.growthfactor, params.foveaModel.uy - marginH);
+	int limit_x = MIN(deltax + skx, params.foveaModel.ux - marginH);
+	int limit_y = MIN(deltay + sky, params.foveaModel.uy - marginH);
 
 	//sum_i ref: comeco da wavelet
 	int sum_i, sum_j;
@@ -602,13 +601,12 @@ static void foveatedHessianDetector(InputArray _img, InputArray _mask, vector<Ke
 static void drawFoveatedLevels(InputArray _img, FoveatedHessianDetectorParams params) {
 	params.foveaModel.check();
 	Mat img = _img.getMat();
-	int growthfactor = params.foveaModel.growthfactor;
 	for(int i = 0; i <= params.foveaModel.m; i++) {
 		int dx = params.foveaModel.getDeltax(i);
 		int dy = params.foveaModel.getDeltay(i);
 		int sx = params.foveaModel.getSizex(i);
 		int sy = params.foveaModel.getSizey(i);
-		cv::rectangle(img, cv::Point(dx-growthfactor, dy-growthfactor), cv::Point(dx+sx+growthfactor, dy+sy+growthfactor), cv::Scalar(255, 255, 255));
+		cv::rectangle(img, cv::Point(dx, dy), cv::Point(dx+sx, dy+sy), cv::Scalar(255, 255, 255));
 	}
 }
 
