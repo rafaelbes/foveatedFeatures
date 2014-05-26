@@ -59,3 +59,12 @@
 14/03/14 21:40:04 foveatedHessianDetector.h: acrescentada a função drawFoveatedLevels(InputArray _img, FoveatedHessianDetectorParams params) que desenha em img os contornos do modelo de foveamento
 14/03/14 21:41:00 linearFoveation.h: fixFovea agora leva em conta o growth factor
 14/03/14 21:41:27 linearFoveation.h: acrescentado o método setFovea(int imgX, int imgY), isto é, as coordenadas da fóvea no sistema de referências da imagem original
+14/03/14 22:10:59 linearFoveation.h: growthfactor foi separado em dois componentes: x e y, alterações consequêntes em foveatedHessianDetector.h e extract.cpp
+======================================================================================
+17/03/14 09:42:32 extract.cpp: acrescentados controles para alterar parâmetros da fóvea
+======================================================================================
+13/04/14 22:12:32 consertado o bug relatado por Renato Gardiman. O problema era que sum_ptr iniciava em (sum_i, 0) e não (sum_i, sum_j) que é a posição correta com o foveamento
+======================================================================================
+24/05/14 20:10:02 os parâmetros growthfactor_x, growthfactor_y serão retirados. Para obter o mesmo efeito, aumenta-se o nível da fóvea (wx, wy)
+26/05/14 20:26:11 adicionado o arquivo foveatedTracking.h com funcionalidade básica para realização de tracking (se o objeto não for detectado, a fóvea é desabilitada até detectar novamente)
+26/05/14 20:27:24 adicionado o arquivo tracking.cpp para teste do tracking foveado
