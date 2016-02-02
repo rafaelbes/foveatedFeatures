@@ -72,7 +72,8 @@ struct FoveatedTracking {
 	}
 
 	int seemsToBeGood() {
-		return fabs(diagonal1 - diagonal2) < 0.08*MAX(diagonal1, diagonal2) && overallDistance < 0.40;
+	  return overallDistance < 0.40;
+	  //return fabs(diagonal1 - diagonal2) < 0.08*MAX(diagonal1, diagonal2) && overallDistance < 0.40;
 	}
 
 	void update(Mat frame, Mat &img_matches) {
@@ -94,7 +95,8 @@ struct FoveatedTracking {
 		//matching descriptors
 		BFMatcher matcher(NORM_L2);
 		vector<DMatch> matches;
-		matcher.match(modelDescriptors, imgDescriptors, matches);
+		if ( !imgDescriptors.empty() )
+		  matcher.match(modelDescriptors, imgDescriptors, matches);
 	
 //		std::cout << matches.size() << " " << modelDescriptors.size() << " " << imgDescriptors.size() << std::endl;
 		if(matches.size() > 5) {
@@ -135,7 +137,8 @@ struct FoveatedTracking {
 			useFovea = 1;
 		if(useFovea)
 			drawFoveatedLevels(frame, *params);
-		drawMatches(modelImg, modelKeypoints, frame, imgKeypoints, matches, img_matches, Scalar(0, 255, 255), Scalar(255, 255, 255), vector<char>(), DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+		drawMatches(modelImg, modelKeypoints, frame, imgKeypoints, matches, img_matches);
+		//drawMatches(modelImg, modelKeypoints, frame, imgKeypoints, matches, img_matches, Scalar(0, 255, 255), Scalar(255, 255, 255), vector<char>(), DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 		//std::cout << overallDistance << std::endl;
 	}
 
