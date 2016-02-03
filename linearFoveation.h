@@ -66,7 +66,7 @@ struct LinearFoveation {
 		assert(m >= 1);
 		assert(beta.size() == eta.size());
 		assert(eta.size() == level.size());
-		for(int i = 0; i < beta.size(); i++) {
+		for(unsigned int i = 0; i < beta.size(); i++) {
 			assert(beta[i] == 1 || beta[i] == 0);
 			assert(eta[i] >= 1);
 			assert(level[i] >= 0 && level[i] <= m);
